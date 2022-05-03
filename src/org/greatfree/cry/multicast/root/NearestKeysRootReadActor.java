@@ -13,6 +13,7 @@ import javax.crypto.NoSuchPaddingException;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.multicast.root.NearestKeysMulticastRequest;
@@ -24,11 +25,11 @@ import org.greatfree.multicast.root.NearestKeysMulticastRequest;
  * 04/08/2022
  *
  */
-final class NearestKeysRootReadActor extends AsyncMulticastor<NearestKeysMulticastRequest>
+final class NearestKeysRootReadActor<Dispatcher extends CryptoCSDispatcher> extends AsyncMulticastor<NearestKeysMulticastRequest, Dispatcher>
 {
 
 //	public NearestKeysRootReadActor(RootSyncMulticastor multicastor)
-	public NearestKeysRootReadActor(RootSyncMulticastor multicastor, int cryptoOption)
+	public NearestKeysRootReadActor(RootSyncMulticastor<Dispatcher> multicastor, int cryptoOption)
 	{
 		super(multicastor, cryptoOption);
 //		super(multicastor);

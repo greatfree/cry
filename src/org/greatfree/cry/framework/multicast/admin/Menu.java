@@ -7,7 +7,7 @@ package org.greatfree.cry.framework.multicast.admin;
  * 04/12/2022
  *
  */
-final class Menu
+public final class Menu
 {
 	public final static String TAB = "\t";
 	public final static String MENU_HEAD = "\n========== Menu Head ===========";

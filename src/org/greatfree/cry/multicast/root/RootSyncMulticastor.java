@@ -19,7 +19,8 @@ import javax.crypto.NoSuchPaddingException;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
-import org.greatfree.cry.server.Peer;
+import org.greatfree.cry.server.CryptoCSDispatcher;
+import org.greatfree.cry.server.CryPeer;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.message.multicast.MulticastNotification;
@@ -38,18 +39,22 @@ import com.google.common.collect.Sets;
  * @author libing
  *
  */
-final class RootSyncMulticastor
+final class RootSyncMulticastor<Dispatcher extends CryptoCSDispatcher>
 {
 //	private final static Logger log = Logger.getLogger("org.greatfree.cry.multicast.root");
 
-	private Peer eventer;
+//	private Peer eventer;
+//	private CryptoPeer<MulticastRootDispatcher> eventer;
+	private CryPeer<Dispatcher> eventer;
 	private int rootBranchCount;
 	private int treeBranchCount;
 	private RootRendezvousPoint rp;
 	private AtomicInteger cryptoOption;
 
 //	public RootSyncMulticastor(Peer eventer, int rootBranchCount, int treeBranchCount)
-	public RootSyncMulticastor(Peer eventer, int rootBranchCount, int treeBranchCount, int cryptoOption)
+//	public RootSyncMulticastor(Peer eventer, int rootBranchCount, int treeBranchCount, int cryptoOption)
+//	public RootSyncMulticastor(CryptoPeer<MulticastRootDispatcher> eventer, int rootBranchCount, int treeBranchCount, int cryptoOption)
+	public RootSyncMulticastor(CryPeer<Dispatcher> eventer, int rootBranchCount, int treeBranchCount, int cryptoOption)
 	{
 		this.eventer = eventer;
 		this.rootBranchCount = rootBranchCount;
@@ -95,7 +100,9 @@ final class RootSyncMulticastor
 
 	public void randomNotify(MulticastNotification notification) throws InvalidKeyException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SignatureException, RemoteReadException, DistributedNodeFailedException, CryptographyMismatchException, InterruptedException, SymmetricKeyUnavailableException, PublicKeyUnavailableException, IOException
 	{
-		this.eventer.syncCryptoNotifyByIPKey(Tools.getRandomSetElement(this.eventer.getClientKeys()), notification, this.cryptoOption.get());
+		// syncCryPrmNotify
+//		this.eventer.syncCryNotify(Tools.getRandomSetElement(this.eventer.getClientKeys()), notification, this.cryptoOption.get());
+		this.eventer.syncCryPrmNotify(Tools.getRandomSetElement(this.eventer.getClientKeys()), notification, this.cryptoOption.get());
 	}
 	
 	public String getNearestClientKey(String key)
@@ -110,12 +117,14 @@ final class RootSyncMulticastor
 
 	public void nearestNotify(String key, MulticastNotification notification) throws IOException, DistributedNodeFailedException, ClassNotFoundException, NoSuchAlgorithmException, RemoteReadException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException
 	{
-		this.eventer.syncCryptoNotifyByIPKey(Tools.getClosestKey(key, this.eventer.getClientKeys()), notification, this.cryptoOption.get());
+//		this.eventer.syncCryNotify(Tools.getClosestKey(key, this.eventer.getClientKeys()), notification, this.cryptoOption.get());
+		this.eventer.syncCryPrmNotify(Tools.getClosestKey(key, this.eventer.getClientKeys()), notification, this.cryptoOption.get());
 	}
 	
 	public void notify(MulticastNotification notification, String childKey) throws IOException, DistributedNodeFailedException, InvalidKeyException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SignatureException, RemoteReadException, CryptographyMismatchException, InterruptedException, SymmetricKeyUnavailableException, PublicKeyUnavailableException
 	{
-		this.eventer.syncCryptoNotifyByIPKey(childKey, notification, this.cryptoOption.get());
+//		this.eventer.syncCryNotify(childKey, notification, this.cryptoOption.get());
+		this.eventer.syncCryPrmNotify(childKey, notification, this.cryptoOption.get());
 	}
 
 	public void notifyWithinNChildren(MulticastNotification notification, int childrenSize) throws IOException, DistributedNodeFailedException, InvalidKeyException, ClassNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SignatureException, RemoteReadException, CryptographyMismatchException, InterruptedException, SymmetricKeyUnavailableException, PublicKeyUnavailableException
@@ -178,7 +187,8 @@ final class RootSyncMulticastor
 									// Set the sending gets normal. 05/18/2017, Bing Li
 									isSendingNormal = true;
 									// Send the message to the immediate child of the root. 11/10/2014, Bing Li
-									this.eventer.syncCryptoNotifyByIPKey(childrenKey, notification, this.cryptoOption.get());
+//									this.eventer.syncCryNotify(childrenKey, notification, this.cryptoOption.get());
+									this.eventer.syncCryPrmNotify(childrenKey, notification, this.cryptoOption.get());
 									// Jump out the loop after sending the message successfully. 11/10/2014, Bing Li
 									break;
 								}
@@ -220,7 +230,8 @@ final class RootSyncMulticastor
 						try
 						{
 							// Send the message to the immediate node of the root. 11/10/2014, Bing Li
-							this.eventer.syncCryptoNotifyByIPKey(childrenKey, notification, this.cryptoOption.get());
+//							this.eventer.syncCryNotify(childrenKey, notification, this.cryptoOption.get());
+							this.eventer.syncCryPrmNotify(childrenKey, notification, this.cryptoOption.get());
 						}
 						catch (IOException e)
 						{
@@ -250,7 +261,8 @@ final class RootSyncMulticastor
 					try
 					{
 						// Send the message to the immediate node of the root. 11/10/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(clientKey, notification, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(clientKey, notification, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(clientKey, notification, this.cryptoOption.get());
 					}
 					catch (IOException e)
 					{
@@ -331,7 +343,8 @@ final class RootSyncMulticastor
 								isSendingNormal = true;
 								// Send the message to the immediate child of the root. 11/10/2014, Bing Li
 //								System.out.println("2) BaseBroadcastNotifier: disseminate(): data to be sent ..."); 
-								this.eventer.syncCryptoNotifyByIPKey(childrenKey, notification, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(childrenKey, notification, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(childrenKey, notification, this.cryptoOption.get());
 								// Jump out the loop after sending the message successfully. 11/10/2014, Bing Li
 //								System.out.println("3) BaseBroadcastNotifier: disseminate(): data is sent ..."); 
 								break;
@@ -376,7 +389,8 @@ final class RootSyncMulticastor
 					{
 //						System.out.println("4) BaseBroadcastNotifier: disseminate(): data to be sent ...");
 						// Send the message to the immediate node of the root. 11/10/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(childrenKey, notification, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(childrenKey, notification, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(childrenKey, notification, this.cryptoOption.get());
 //						System.out.println("5) BaseBroadcastNotifier: disseminate(): data is sent ..."); 
 					}
 					catch (IOException e)
@@ -412,7 +426,8 @@ final class RootSyncMulticastor
 //					System.out.println("2) RootSyncMulticastor: notify(): notification to be sent ...");
 //					log.info("2) RootSyncMulticastor: notify(): notification to be sent ...");
 					// Send the message to the immediate node of the root. 11/10/2014, Bing Li
-					this.eventer.syncCryptoNotifyByIPKey(childClientKey, notification, this.cryptoOption.get());
+//					this.eventer.syncCryNotify(childClientKey, notification, this.cryptoOption.get());
+					this.eventer.syncCryPrmNotify(childClientKey, notification, this.cryptoOption.get());
 //					System.out.println("3) RootSyncMulticastor: notify(): notification is sent ...");
 				}
 				catch (IOException e)
@@ -442,7 +457,8 @@ final class RootSyncMulticastor
 		try
 		{
 			// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-			this.eventer.syncCryptoNotifyByIPKey(randomKey, request, this.cryptoOption.get());
+//			this.eventer.syncCryNotify(randomKey, request, this.cryptoOption.get());
+			this.eventer.syncCryPrmNotify(randomKey, request, this.cryptoOption.get());
 			// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //			this.nodeCount.incrementAndGet();
 		}
@@ -482,7 +498,8 @@ final class RootSyncMulticastor
 		try
 		{
 			// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-			this.eventer.syncCryptoNotifyByIPKey(nearestKey, request, this.cryptoOption.get());
+//			this.eventer.syncCryNotify(nearestKey, request, this.cryptoOption.get());
+			this.eventer.syncCryPrmNotify(nearestKey, request, this.cryptoOption.get());
 			// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //			this.nodeCount.incrementAndGet();
 		}
@@ -511,7 +528,8 @@ final class RootSyncMulticastor
 		try
 		{
 			// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-			this.eventer.syncCryptoNotifyByIPKey(childKey, request, this.cryptoOption.get());
+//			this.eventer.syncCryNotify(childKey, request, this.cryptoOption.get());
+			this.eventer.syncCryPrmNotify(childKey, request, this.cryptoOption.get());
 			// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //			this.nodeCount.incrementAndGet();
 		}
@@ -598,7 +616,8 @@ final class RootSyncMulticastor
 								// Set the sending gets normal. 05/18/2017, Bing Li
 								isSendingNormal = true;
 								// Send the request to the immediate child of the root. 11/28/2014, Bing Li
-								this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 								// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //									this.nodeCount.incrementAndGet();
 //								this.decrementNode(request.getCollaboratorKey());
@@ -647,7 +666,8 @@ final class RootSyncMulticastor
 					try
 					{
 						// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 						// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //						this.nodeCount.incrementAndGet();
 					}
@@ -682,7 +702,8 @@ final class RootSyncMulticastor
 				try
 				{
 					// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-					this.eventer.syncCryptoNotifyByIPKey(childClientKey, request, this.cryptoOption.get());
+//					this.eventer.syncCryNotify(childClientKey, request, this.cryptoOption.get());
+					this.eventer.syncCryPrmNotify(childClientKey, request, this.cryptoOption.get());
 					// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //					this.nodeCount.incrementAndGet();
 				}
@@ -762,7 +783,8 @@ final class RootSyncMulticastor
 								// Set the sending gets normal. 05/18/2017, Bing Li
 								isSendingNormal = true;
 								// Send the request to the immediate child of the root. 11/28/2014, Bing Li
-								this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 								// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //								this.nodeCount.incrementAndGet();
 								// Jump out the loop after sending the request successfully. 11/28/2014, Bing Li
@@ -809,7 +831,8 @@ final class RootSyncMulticastor
 					try
 					{
 						// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 						// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //						this.nodeCount.incrementAndGet();
 					}
@@ -845,7 +868,8 @@ final class RootSyncMulticastor
 				try
 				{
 					// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-					this.eventer.syncCryptoNotifyByIPKey(childKey, request, this.cryptoOption.get());
+//					this.eventer.syncCryNotify(childKey, request, this.cryptoOption.get());
+					this.eventer.syncCryPrmNotify(childKey, request, this.cryptoOption.get());
 					// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //					this.nodeCount.incrementAndGet();
 				}
@@ -943,7 +967,8 @@ final class RootSyncMulticastor
 								// Set the sending gets normal. 05/18/2017, Bing Li
 								isSendingNormal = true;
 								// Send the request to the immediate child of the root. 11/28/2014, Bing Li
-								this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 								// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //								this.nodeCount.incrementAndGet();
 								// Jump out the loop after sending the request successfully. 11/28/2014, Bing Li
@@ -991,7 +1016,8 @@ final class RootSyncMulticastor
 					try
 					{
 						// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 						// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //						this.nodeCount.incrementAndGet();
 					}
@@ -1027,7 +1053,8 @@ final class RootSyncMulticastor
 				try
 				{
 					// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-					this.eventer.syncCryptoNotifyByIPKey(childClientKey, request, this.cryptoOption.get());
+//					this.eventer.syncCryNotify(childClientKey, request, this.cryptoOption.get());
+					this.eventer.syncCryPrmNotify(childClientKey, request, this.cryptoOption.get());
 					// Calculate the count of the children in the cluster. 05/21/2017, Bing Li
 //					this.nodeCount.incrementAndGet();
 				}
@@ -1115,7 +1142,8 @@ final class RootSyncMulticastor
 								// Set the sending gets normal. 05/18/2017, Bing Li
 								isSendingNormal = true;
 								// Send the request to the immediate child of the root. 11/28/2014, Bing Li
-								this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 								
 //								System.out.println("1) RootSyncMulticastor-read(): send to " + this.eventer.getIPAddressByKey(childrenKey));
 //								log.info("IP Just sent = " + this.eventer.getIPAddressByKey(childrenKey));
@@ -1166,7 +1194,8 @@ final class RootSyncMulticastor
 					try
 					{
 						// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-						this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//						this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+						this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 //						System.out.println("2) RootSyncMulticastor-read(): send to " + this.eventer.getIPAddressByKey(childrenKey));
 					}
 					catch (IOException e)
@@ -1201,7 +1230,8 @@ final class RootSyncMulticastor
 				try
 				{
 					// Send the request to the immediate node of the root. 11/28/2014, Bing Li
-					this.eventer.syncCryptoNotifyByIPKey(childrenKey, request, this.cryptoOption.get());
+//					this.eventer.syncCryNotify(childrenKey, request, this.cryptoOption.get());
+					this.eventer.syncCryPrmNotify(childrenKey, request, this.cryptoOption.get());
 //					System.out.println("3) RootSyncMulticastor-read(): send to " + this.eventer.getIPAddressByKey(childrenKey));
 				}
 				catch (IOException e)

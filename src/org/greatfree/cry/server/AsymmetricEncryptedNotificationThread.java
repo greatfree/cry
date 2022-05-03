@@ -53,6 +53,7 @@ class AsymmetricEncryptedNotificationThread extends NotificationQueue<Asymmetric
 					{
 						log.info("Exception: The machine is private such that the notification cannot be processed!");
 					}
+					super.disposeMessage(notification);
 				}
 				catch (InterruptedException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
 						| InvalidAlgorithmParameterException | ShortBufferException | IllegalBlockSizeException

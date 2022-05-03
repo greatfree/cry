@@ -16,7 +16,9 @@ import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
+import org.greatfree.message.ServerMessage;
 import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.server.ServerDispatcher;
 
 /**
  * 
@@ -25,15 +27,16 @@ import org.greatfree.message.multicast.MulticastRequest;
  * 04/10/2022
  *
  */
-final class ChildReader
+// final class ChildReader<Dispatcher extends CryptoCSDispatcher>
+final class ChildReader<Dispatcher extends ServerDispatcher<ServerMessage>>
 {
-	private ChildSyncMulticastor multicastor;
-	private ChildAsyncMulticastReader asynReader;
+	private ChildSyncMulticastor<Dispatcher> multicastor;
+	private ChildAsyncMulticastReader<Dispatcher> asynReader;
 
-	public ChildReader(ChildSyncMulticastor eventer, ThreadPool pool)
+	public ChildReader(ChildSyncMulticastor<Dispatcher> eventer, ThreadPool pool)
 	{
 		this.multicastor = eventer;
-		this.asynReader = new ChildAsyncMulticastReader(eventer, pool);
+		this.asynReader = new ChildAsyncMulticastReader<Dispatcher>(eventer, pool);
 	}
 
 	public void dispose() throws IOException, InterruptedException

@@ -18,7 +18,7 @@ import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
 import org.greatfree.cry.framework.p2p.peer.PeerMenu;
 import org.greatfree.cry.framework.p2p.peer.PeerTask;
-import org.greatfree.cry.framework.tncs.Config;
+import org.greatfree.cry.framework.tncs.CryptoConfig;
 import org.greatfree.cry.server.Peer;
 import org.greatfree.data.ServerConfig;
 import org.greatfree.exceptions.DistributedNodeFailedException;
@@ -51,14 +51,14 @@ class StartPeer
 				.registryServerPort(8941)
 				.task(new PeerTask())
 				.isRegistryNeeded(true)
-				.asymCipherAlgorithm(Config.RSA)
+				.asymCipherAlgorithm(CryptoConfig.RSA)
 				.asymCipherKeyLength(4096)
-				.symCipherAlgorithm(Config.AES)
-				.symCipherSpec(Config.AES_SPEC)
+				.symCipherAlgorithm(CryptoConfig.AES)
+				.symCipherSpec(CryptoConfig.AES_SPEC)
 				.symCipherKeyLength(256)
 				.symIVKeyLength(128)
-				.signatureAlgorithm(Config.SHA_WITH_RSA)
-				.signature(yourName + Config.SIGNATURE_SUFFIX)
+				.signatureAlgorithm(CryptoConfig.SHA_WITH_RSA)
+				.signature(yourName + CryptoConfig.SIGNATURE_SUFFIX)
 				.build();
 
 		peer.start();

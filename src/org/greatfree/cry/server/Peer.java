@@ -33,7 +33,7 @@ import org.greatfree.cry.exceptions.OwnerCheatingException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
 import org.greatfree.cry.framework.ownership.OwnerConfig;
-import org.greatfree.cry.framework.tncs.Config;
+import org.greatfree.cry.framework.tncs.CryptoConfig;
 import org.greatfree.cry.messege.AsymmetricEncryptedRequest;
 import org.greatfree.cry.messege.AsymmetricEncryptedResponse;
 import org.greatfree.cry.messege.CryAppID;
@@ -117,6 +117,8 @@ public final class Peer
 		CryptoCSDispatcher csd = new CryptoCSDispatcher(ServerConfig.SHARED_THREAD_POOL_SIZE, ServerConfig.SHARED_THREAD_POOL_KEEP_ALIVE_TIME, RegistryConfig.SCHEDULER_THREAD_POOL_SIZE, RegistryConfig.SCHEDULER_THREAD_POOL_KEEP_ALIVE_TIME);
 		if (builder.getConfigXML() != null)
 		{
+//			log.info("1) Peer is initialized ...");
+			
 			PeerProfile.P2P().init(builder.getConfigXML());
 			
 			this.peer = new org.greatfree.server.container.Peer.PeerBuilder<CryptoCSDispatcher>()
@@ -145,6 +147,8 @@ public final class Peer
 		}
 		else
 		{
+//			log.info("2) Peer is initialized ...");
+			
 			this.peer = new org.greatfree.server.container.Peer.PeerBuilder<CryptoCSDispatcher>()
 					.peerPort(builder.getPort())
 					.peerName(builder.getPeerName())
@@ -217,11 +221,15 @@ public final class Peer
 	
 	public static class PeerBuilder implements Builder<Peer>
 	{
+		/*
+		 * Most typical Peer (non-container pPeer) parameters are encapsulated. 04/24/2022, Bing Li
+		 */
 		private String peerName;
 		private int port;
 		private String registryServerIP;
 		private int registryServerPort;
 		private ServerTask task;
+//		private MulticastTask task;
 		private boolean isRegistryNeeded;
 		
 		private boolean isEncrypted;
@@ -275,6 +283,7 @@ public final class Peer
 			return this;
 		}
 		
+//		public PeerBuilder task(MulticastTask task)
 		public PeerBuilder task(ServerTask task)
 		{
 			this.task = task;
@@ -402,6 +411,7 @@ public final class Peer
 			return this.registryServerPort;
 		}
 		
+//		public MulticastTask getTask()
 		public ServerTask getTask()
 		{
 			return this.task;
@@ -529,14 +539,7 @@ public final class Peer
 		}
 		log.info("Notifying partners done!");
 		TerminateSignal.SIGNAL().notifyAllTermination();
-		try
-		{
-			this.peer.stop(timeout);
-		}
-		catch (ClassNotFoundException | RemoteReadException | IOException | InterruptedException e)
-		{
-			log.info("Remote parnters are down!");
-		}
+		this.peer.stop(timeout);
 		log.info("Peer stopping done!");
 	}
 	
@@ -560,6 +563,16 @@ public final class Peer
 		return new IPAddress(this.peer.getPeerIP(), this.peer.getPort());
 	}
 	
+	public String getPeerIP()
+	{
+		return this.peer.getPeerIP();
+	}
+	
+	public int getPort()
+	{
+		return this.peer.getPort();
+	}
+	
 	public String getLocalIPKey()
 	{
 		return this.peer.getLocalIPKey();
@@ -575,11 +588,26 @@ public final class Peer
 		this.peer.getClientPool().clearAll();
 	}
 	
+	public String getRegistryServerIP()
+	{
+		return this.peer.getRegistryServerIP();
+	}
+	
+	public int getRegistryServerPort()
+	{
+		return this.peer.getRegistryServerPort();
+	}
+	
 //	public void addPartners(String peerKey, String peerName, String ip, int port)
 	public void addPartners(String ip, int port)
 	{
 //		this.peer.addPartners(peerKey, peerName, ip, port);
 		this.peer.addPartners(ip, port);
+	}
+	
+	public void removePartner(String ipKey) throws IOException
+	{
+		this.peer.removePartner(ipKey);
 	}
 	
 	public void addPeer(String peerName, IPAddress ip)
@@ -772,7 +800,7 @@ public final class Peer
 	{
 		if (this.isAsymCryptography.get())
 		{
-			ServiceProvider.CRY().setSignature(signature + Config.SIGNATURE_SUFFIX);
+			ServiceProvider.CRY().setSignature(signature + CryptoConfig.SIGNATURE_SUFFIX);
 		}
 		else
 		{
@@ -881,7 +909,8 @@ public final class Peer
 		}
 	}
 	
-	public void syncNotify(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException
+//	public void syncNotify(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException
+	public void syncNotify(String partnerName, ServerMessage notification) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException
 	{
 //		String peerKey = PeerContainer.getPeerKey(partnerName);
 //		IPAddress ip = this.getIPAddress(peerKey);
@@ -896,7 +925,8 @@ public final class Peer
 		}
 	}
 
-	public void syncNotifyByIPKey(String ipKey, Notification notification) throws IOException
+//	private void syncNotifyByIPKey(String ipKey, Notification notification) throws IOException
+	private void syncNotifyByIPKey(String ipKey, ServerMessage notification) throws IOException
 	{
 		this.peer.syncNotify(ipKey, notification);
 	}
@@ -911,7 +941,13 @@ public final class Peer
 		this.peer.syncNotify(ip, port, notification);
 	}
 
-	public void syncNotifySymmetrically(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, CryptographyMismatchException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, DistributedNodeFailedException, SymmetricKeyUnavailableException
+	public void syncNotifyByIP(String ip, int port, ServerMessage notification) throws IOException, InterruptedException
+	{
+		this.peer.syncNotify(ip, port, notification);
+	}
+
+//	public void syncNotifySymmetrically(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, CryptographyMismatchException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, DistributedNodeFailedException, SymmetricKeyUnavailableException
+	public void syncNotifySymmetrically(String partnerName, ServerMessage notification) throws ClassNotFoundException, RemoteReadException, IOException, CryptographyMismatchException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, DistributedNodeFailedException, SymmetricKeyUnavailableException
 	{
 	if (!this.isAsymCryptography.get())
 		{
@@ -923,7 +959,8 @@ public final class Peer
 				SymmetricCrypto symCrypto = ServiceProvider.CRY().getSymmetricCrypto(peerKey);
 				if (symCrypto != null)
 				{
-					byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 //					this.peer.syncNotify(ip.getIP(), ip.getPort(), new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, symCrypto.getSessionKey(), enData));
 					this.peer.syncNotify(ip.getIP(), ip.getPort(), new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, this.peer.getPeerID(), enData));
@@ -944,7 +981,8 @@ public final class Peer
 		}
 	}
 
-	public void syncNotifySymmetricallyByIPKey(String ipKey, Notification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+//	private void syncNotifySymmetricallyByIPKey(String ipKey, Notification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+	private void syncNotifySymmetricallyByIPKey(String ipKey, ServerMessage notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
 	{
 		if (!this.isAsymCryptography.get())
 		{
@@ -955,7 +993,8 @@ public final class Peer
 				SymmetricCrypto symCrypto = ServiceProvider.CRY().getSymmetricCrypto(PeerContainer.getPeerKey(partnerName));
 				if (symCrypto != null)
 				{
-					byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 //					this.peer.syncNotify(ip.getIP(), ip.getPort(), new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, symCrypto.getSessionKey(), enData));
 					this.peer.syncNotify(ip.getIP(), ip.getPort(), new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, this.peer.getPeerID(), enData));
@@ -1000,7 +1039,8 @@ public final class Peer
 		}
 	}
 
-	public void syncNotifySymmetricallyByIP(String ip, int port, Notification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, CryptographyMismatchException
+//	private void syncNotifySymmetricallyByIP(String ip, int port, Notification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, CryptographyMismatchException
+	private void syncNotifySymmetricallyByIP(String ip, int port, ServerMessage notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, SymmetricKeyUnavailableException, CryptographyMismatchException
 	{
 		if (!this.isAsymCryptography.get())
 		{
@@ -1008,7 +1048,8 @@ public final class Peer
 			SymmetricCrypto symCrypto = ServiceProvider.CRY().getSymmetricCrypto(PeerContainer.getPeerKey(partnerName));
 			if (symCrypto != null)
 			{
-				byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+//				byte[] enData = SymmetricCoder.encryptNotification(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+				byte[] enData = SymmetricCoder.encryptMessage(notification, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
 				log.info("Encrypted Notification: " + Hex.toHexString(enData));
 //				this.peer.syncNotify(ip, port, new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, symCrypto.getSessionKey(), enData));
 				this.peer.syncNotify(ip, port, new EncryptedNotification(CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION, this.peer.getPeerID(), enData));
@@ -1024,7 +1065,8 @@ public final class Peer
 		}
 	}
 
-	public void syncNotifyAsymmetrically(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+//	public void syncNotifyAsymmetrically(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+	public void syncNotifyAsymmetrically(String partnerName, ServerMessage notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
 	{
 		if (this.isAsymCryptography.get())
 		{
@@ -1042,7 +1084,8 @@ public final class Peer
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 //					byte[] enData = AsymmetricCoder.encryptNotification(notification, acrypto.getAlgorithm(), acrypto.getPublicKey());
-					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 //					this.peer.syncNotify(ip.getIP(), ip.getPort(), new EncryptedNotification(CryAppID.ASYMMETRIC_ENCRYPTED_NOTIFICATION, acrypto.getSessionKey(), enData));
@@ -1066,7 +1109,8 @@ public final class Peer
 		}
 	}
 	
-	public void syncNotifyAsymmetricallyByIPKey(String ipKey, Notification notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+//	private void syncNotifyAsymmetricallyByIPKey(String ipKey, Notification notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+	private void syncNotifyAsymmetricallyByIPKey(String ipKey, ServerMessage notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
 	{
 		if (this.isAsymCryptography.get())
 		{
@@ -1079,7 +1123,8 @@ public final class Peer
 				{
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 					this.peer.syncNotify(ip.getIP(), ip.getPort(), new AsymmetricEncryptedNotification(publicKey.getSessionKey(), enData, enScrypto));
@@ -1129,7 +1174,8 @@ public final class Peer
 		}
 	}
 
-	public void syncNotifyAsymmetricallyByIP(String ip, int port, Notification notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+//	private void syncNotifyAsymmetricallyByIP(String ip, int port, Notification notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
+	private void syncNotifyAsymmetricallyByIP(String ip, int port, ServerMessage notification) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException, PublicKeyUnavailableException, DistributedNodeFailedException, CryptographyMismatchException
 	{
 		if (this.isAsymCryptography.get())
 		{
@@ -1139,7 +1185,8 @@ public final class Peer
 			{
 //				SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 				AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-				byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//				byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+				byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 				log.info("Encrypted Notification: " + Hex.toHexString(enData));
 				byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 				this.peer.syncNotify(ip, port, new AsymmetricEncryptedNotification(publicKey.getSessionKey(), enData, enScrypto));
@@ -1184,7 +1231,8 @@ public final class Peer
 	}
 	*/
 
-	public void syncNotifyBySignature(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+//	public void syncNotifyBySignature(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+	public void syncNotifyBySignature(String partnerName, ServerMessage notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, InvalidAlgorithmParameterException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
 	{
 //		if (this.isAsymCryptography)
 		if (this.isSigned())
@@ -1201,7 +1249,8 @@ public final class Peer
 //					log.info("Public key is found!");
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 					byte[] signedInfo = AsymmetricCoder.sign(ServiceProvider.CRY().getSignatureAlgorithm(), ServiceProvider.CRY().getPrivateKey(), ServiceProvider.CRY().getSignature());
@@ -1225,7 +1274,8 @@ public final class Peer
 		}
 	}
 	
-	public void syncNotifyBySignatureByIPKey(String ipKey, Notification notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
+//	private void syncNotifyBySignatureByIPKey(String ipKey, Notification notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
+	private void syncNotifyBySignatureByIPKey(String ipKey, ServerMessage notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
 	{
 		if (this.isSigned())
 		{
@@ -1238,7 +1288,8 @@ public final class Peer
 				{
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					log.info("Encrypted Notification: " + Hex.toHexString(enData));
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 					byte[] signedInfo = AsymmetricCoder.sign(ServiceProvider.CRY().getSignatureAlgorithm(), ServiceProvider.CRY().getPrivateKey(), ServiceProvider.CRY().getSignature());
@@ -1292,7 +1343,8 @@ public final class Peer
 	}
 	*/
 
-	public void syncNotifyBySignatureByIP(String ip, int port, Notification notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
+//	private void syncNotifyBySignatureByIP(String ip, int port, Notification notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
+	private void syncNotifyBySignatureByIP(String ip, int port, ServerMessage notification) throws CryptographyMismatchException, DistributedNodeFailedException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, IOException, SignatureException, InterruptedException, PublicKeyUnavailableException
 	{
 		if (this.isSigned())
 		{
@@ -1302,7 +1354,7 @@ public final class Peer
 			{
 //				SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 				AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-				byte[] enData = SymmetricCoder.encryptNotification(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+				byte[] enData = SymmetricCoder.encryptMessage(notification, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 				log.info("Encrypted Notification: " + Hex.toHexString(enData));
 				byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 				byte[] signedInfo = AsymmetricCoder.sign(ServiceProvider.CRY().getSignatureAlgorithm(), ServiceProvider.CRY().getPrivateKey(), ServiceProvider.CRY().getSignature());
@@ -1376,7 +1428,17 @@ public final class Peer
 			throw new DistributedNodeFailedException(partnerName);
 		}
 	}
-	
+
+	public void asyncNotify(String ip, int port, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, DistributedNodeFailedException
+	{
+		this.peer.asyncNotify(ip, port, notification);
+	}
+
+	public void asyncNotify(String ip, int port, ServerMessage notification) throws ClassNotFoundException, RemoteReadException, IOException, DistributedNodeFailedException
+	{
+		this.peer.asyncNotify(ip, port, notification);
+	}
+
 	public void asyncNotifySymmetrically(String partnerName, Notification notification) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, CryptographyMismatchException, DistributedNodeFailedException, SymmetricKeyUnavailableException
 	{
 		if (!this.isAsymCryptography.get())
@@ -1523,7 +1585,8 @@ public final class Peer
 		}
 	}
 
-	public ServerMessage read(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, DistributedNodeFailedException
+//	public ServerMessage read(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, DistributedNodeFailedException
+	public ServerMessage read(String partnerName, ServerMessage request) throws ClassNotFoundException, RemoteReadException, IOException, DistributedNodeFailedException
 	{
 //		String peerKey = PeerContainer.getPeerKey(partnerName);
 //		IPAddress ip = this.getIPAddress(peerKey);
@@ -1548,7 +1611,8 @@ public final class Peer
 		return this.peer.read(ip, port, request);
 	}
 
-	public ServerMessage readSymmetrically(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, SymmetricKeyUnavailableException
+//	public ServerMessage readSymmetrically(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, SymmetricKeyUnavailableException
+	public ServerMessage readSymmetrically(String partnerName, ServerMessage request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, SymmetricKeyUnavailableException
 	{
 		if (!this.isAsymCryptography.get())
 		{
@@ -1560,7 +1624,8 @@ public final class Peer
 				SymmetricCrypto symCrypto = ServiceProvider.CRY().getSymmetricCrypto(peerKey);
 				if (symCrypto != null)
 				{
-					byte[] enData = SymmetricCoder.encryptRequest(request, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptRequest(request, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(request, symCrypto.getCipherKey(), symCrypto.getIVKey(), symCrypto.getCipherSpec());
 					log.info("Encrypted Request: " + Hex.toHexString(enData));
 //					EncryptedResponse response = (EncryptedResponse)this.peer.read(ip.getIP(), ip.getPort(), new EncryptedRequest(CryAppID.SYMMETRIC_ENCRYPTED_REQUEST, symCrypto.getSessionKey(), enData));
 					EncryptedResponse response = (EncryptedResponse)this.peer.read(ip.getIP(), ip.getPort(), new EncryptedRequest(CryAppID.SYMMETRIC_ENCRYPTED_REQUEST, this.peer.getPeerID(), enData));
@@ -1587,7 +1652,8 @@ public final class Peer
 		return null;
 	}
 
-	public ServerMessage readAsymmetrically(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+//	public ServerMessage readAsymmetrically(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
+	public ServerMessage readAsymmetrically(String partnerName, ServerMessage request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, CryptographyMismatchException, DistributedNodeFailedException, PublicKeyUnavailableException
 	{
 		if (this.isAsymCryptography.get())
 		{
@@ -1603,7 +1669,8 @@ public final class Peer
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 //					byte[] enData = AsymmetricCoder.encryptRequest(request, acrypto.getAlgorithm(), acrypto.getPublicKey());
-					byte[] enData = SymmetricCoder.encryptRequest(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptRequest(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 					log.info("Encrypted Request: " + Hex.toHexString(enData));
 //					EncryptedResponse response = (EncryptedResponse)this.peer.read(ip.getIP(), ip.getPort(), new EncryptedRequest(CryAppID.ASYMMETRIC_ENCRYPTED_REQUEST, acrypto.getSessionKey(), enData));
@@ -1635,7 +1702,8 @@ public final class Peer
 		return null;
 	}
 	
-	public ServerMessage readBySignature(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, OwnerCheatingException, CheatingException, PublicKeyUnavailableException
+//	public ServerMessage readBySignature(String partnerName, Request request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, OwnerCheatingException, CheatingException, PublicKeyUnavailableException
+	public ServerMessage readBySignature(String partnerName, ServerMessage request) throws ClassNotFoundException, RemoteReadException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, SignatureException, CryptographyMismatchException, DistributedNodeFailedException, OwnerCheatingException, CheatingException, PublicKeyUnavailableException
 	{
 //		if (this.isAsymCryptography)
 		if (this.isSigned())
@@ -1651,7 +1719,8 @@ public final class Peer
 				{
 //					SymmetricCrypto scrypto = SymmetricCoder.generateCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
 					AsymCompCrypto scrypto = AsymmetricCoder.generateCompCrypto(this.symCipherAlgorithm, this.symCipherSpec, this.symCipherKeyLength, this.symIVKeyLength, this.peer.getPeerID());
-					byte[] enData = SymmetricCoder.encryptRequest(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+//					byte[] enData = SymmetricCoder.encryptRequest(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
+					byte[] enData = SymmetricCoder.encryptMessage(request, scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec());
 					byte[] enScrypto = AsymmetricCoder.encrypt(scrypto, publicKey.getAsymAlgorithm(), publicKey.getPublicKey());
 					byte[] signedInfo = AsymmetricCoder.sign(ServiceProvider.CRY().getSignatureAlgorithm(), ServiceProvider.CRY().getPrivateKey(), ServiceProvider.CRY().getSignature());
 					log.info("Your signature is " + ServiceProvider.CRY().getSignature());
@@ -1898,7 +1967,8 @@ public final class Peer
 	}
 	*/
 
-	public void syncCryptoNotifyByName(String peerName, Notification notification, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException
+//	public void syncCryptoNotifyByName(String peerName, Notification notification, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException
+	public void syncCryptoNotifyByName(String peerName, ServerMessage notification, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException
 	{
 		switch (cryptoOption)
 		{
@@ -1935,7 +2005,8 @@ public final class Peer
 		}
 	}
 
-	public ServerMessage cryptoReadByName(String peerName, Request request, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, ShortBufferException, OwnerCheatingException, CheatingException
+//	public ServerMessage cryptoReadByName(String peerName, Request request, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, ShortBufferException, OwnerCheatingException, CheatingException
+	public ServerMessage cryptoReadByName(String peerName, ServerMessage request, int cryptoOption) throws ClassNotFoundException, RemoteReadException, IOException, InterruptedException, DistributedNodeFailedException, NoSuchAlgorithmException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, ShortBufferException, OwnerCheatingException, CheatingException
 	{
 		switch (cryptoOption)
 		{
@@ -1969,7 +2040,8 @@ public final class Peer
 		return null;
 	}
 
-	public void syncCryptoNotifyByIP(String peerName, IPAddress ip, Notification notification, int cryptoOption) throws IOException, InterruptedException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, CryptographyMismatchException, PublicKeyUnavailableException, DistributedNodeFailedException, SignatureException, ClassNotFoundException, RemoteReadException
+//	public void syncCryptoNotifyByIP(String peerName, IPAddress ip, Notification notification, int cryptoOption) throws IOException, InterruptedException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, CryptographyMismatchException, PublicKeyUnavailableException, DistributedNodeFailedException, SignatureException, ClassNotFoundException, RemoteReadException
+	public void syncCryptoNotifyByIP(String peerName, IPAddress ip, ServerMessage notification, int cryptoOption) throws IOException, InterruptedException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, SymmetricKeyUnavailableException, CryptographyMismatchException, PublicKeyUnavailableException, DistributedNodeFailedException, SignatureException, ClassNotFoundException, RemoteReadException
 	{
 		switch (cryptoOption)
 		{
@@ -2043,7 +2115,8 @@ public final class Peer
 		}
 	}
 
-	public void syncCryptoNotifyByIPKey(String ipKey, Notification notification, int cryptoOption) throws ClassNotFoundException, NoSuchAlgorithmException, RemoteReadException, DistributedNodeFailedException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, IOException
+//	public void syncCryptoNotifyByIPKey(String ipKey, Notification notification, int cryptoOption) throws ClassNotFoundException, NoSuchAlgorithmException, RemoteReadException, DistributedNodeFailedException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, IOException
+	public void syncCryptoNotifyByIPKey(String ipKey, ServerMessage notification, int cryptoOption) throws ClassNotFoundException, NoSuchAlgorithmException, RemoteReadException, DistributedNodeFailedException, CryptographyMismatchException, InvalidKeyException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, InterruptedException, SymmetricKeyUnavailableException, SignatureException, PublicKeyUnavailableException, IOException
 	{
 		try
 		{

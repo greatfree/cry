@@ -31,6 +31,8 @@ public class AsymmetricCoder
 {
 //	private final static Logger log = Logger.getLogger("org.greatfree.cry");
 	
+//	private final static Logger log = Logger.getLogger("org.greatfree.cry");
+	
 //	public static AsymmetricCrypto generateCrypto(String cipherAlgorithm, int cipherKeyLength, SymmetricCrypto symCrypto) throws NoSuchAlgorithmException
 	public static AsymmetricCrypto generateCrypto(String asymCipherAlgorithm, int asymCipherKeyLength, String symCipherAlgorithm, String symCipherSpec, int symCipherKeyLength, int symIVKeyLength) throws NoSuchAlgorithmException
 	{
@@ -45,6 +47,7 @@ public class AsymmetricCoder
 	public static AsymmetricCrypto generateCrypto(String asymCipherAlgorithm, int asymCipherKeyLength, String symCipherAlgorithm, String symCipherSpec, int symCipherKeyLength, int symIVKeyLength, String signatureAlgorithm, String signature) throws NoSuchAlgorithmException
 	{
 		KeyPairGenerator generator = KeyPairGenerator.getInstance(asymCipherAlgorithm, new BouncyCastleProvider());
+//		log.info("asymCipherKeyLength = " + asymCipherKeyLength);
 		generator.initialize(asymCipherKeyLength);
 		KeyPair kp = generator.generateKeyPair(); 
 //		return new AsymmetricCrypto(Tools.generateUniqueKey(), cipherAlgorithm, kp.getPublic(), kp.getPrivate(), symCrypto);

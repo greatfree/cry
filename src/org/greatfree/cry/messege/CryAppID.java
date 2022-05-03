@@ -7,7 +7,7 @@ package org.greatfree.cry.messege;
  *         01/04/2022, Bing Li
  *
  */
-public class CryAppID
+public final class CryAppID
 {
 	public final static int SYMMETRIC_CRYPTO_SESSION_REQUEST = 274;
 	public final static int SYMMETRIC_CRYPTO_SESSION_RESPONSE = 275;
@@ -43,4 +43,9 @@ public class CryAppID
 
 	public final static int OWNER_JOIN_NOTIFICATION = 295;
 	public final static int OWNER_LEAVE_NOTIFICATION = 296;
+
+	public final static int SYMMETRIC_PRIMITIVE_NOTIFICATION = 400;
+	public final static int ASYMMETRIC_PRIMITIVE_NOTIFICATION = 401;
+	public final static int SIGNED_PRIMITIVE_NOTIFICATION = 402;
+	public final static int PRIVATE_PRIMITIVE_NOTIFICATION = 403;
 }

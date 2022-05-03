@@ -22,7 +22,7 @@ import org.greatfree.cry.framework.ownership.message.ReadRequest;
 import org.greatfree.cry.framework.ownership.message.ReadResponse;
 import org.greatfree.cry.framework.ownership.message.StopPeerNotification;
 import org.greatfree.cry.framework.ownership.message.WriteNotification;
-import org.greatfree.cry.framework.tncs.Config;
+import org.greatfree.cry.framework.tncs.CryptoConfig;
 import org.greatfree.cry.server.Peer;
 import org.greatfree.data.ServerConfig;
 import org.greatfree.exceptions.DistributedNodeFailedException;
@@ -75,14 +75,14 @@ final class Owner
 				.registryServerPort(BlockConfig.BC_REGISTRY_PORT)
 				.task(new OwnerTask())
 				.isRegistryNeeded(true)
-				.asymCipherAlgorithm(Config.RSA)
-				.asymCipherKeyLength(BlockConfig.RSA_LENGTH)
-				.symCipherAlgorithm(Config.AES)
-				.symCipherSpec(Config.AES_SPEC)
-				.symCipherKeyLength(BlockConfig.SYMMETRIC_KEY_LENGTH)
-				.symIVKeyLength(BlockConfig.SYMMETRIC_IV_KEY_LENGTH)
-				.signatureAlgorithm(Config.SHA_WITH_RSA)
-				.signature(signature + Config.SIGNATURE_SUFFIX)
+				.asymCipherAlgorithm(CryptoConfig.RSA)
+				.asymCipherKeyLength(CryptoConfig.RSA_LENGTH)
+				.symCipherAlgorithm(CryptoConfig.AES)
+				.symCipherSpec(CryptoConfig.AES_SPEC)
+				.symCipherKeyLength(CryptoConfig.SYMMETRIC_KEY_LENGTH)
+				.symIVKeyLength(CryptoConfig.SYMMETRIC_IV_KEY_LENGTH)
+				.signatureAlgorithm(CryptoConfig.SHA_WITH_RSA)
+				.signature(signature + CryptoConfig.SIGNATURE_SUFFIX)
 				.isAsymCryptography(true)
 				.build();
 		this.peer.start();

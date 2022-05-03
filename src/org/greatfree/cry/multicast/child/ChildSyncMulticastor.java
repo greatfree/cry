@@ -19,12 +19,14 @@ import javax.crypto.NoSuchPaddingException;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
-import org.greatfree.cry.server.Peer;
+import org.greatfree.cry.server.CryPeer;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
+import org.greatfree.message.ServerMessage;
 import org.greatfree.message.multicast.MulticastNotification;
 import org.greatfree.message.multicast.MulticastRequest;
 import org.greatfree.multicast.Tree;
+import org.greatfree.server.ServerDispatcher;
 import org.greatfree.util.IPAddress;
 import org.greatfree.util.Rand;
 import org.greatfree.util.UtilConfig;
@@ -36,16 +38,19 @@ import org.greatfree.util.UtilConfig;
  * 04/10/2022
  *
  */
-final class ChildSyncMulticastor
+// final class ChildSyncMulticastor<Dispatcher extends CryptoCSDispatcher>
+final class ChildSyncMulticastor<Dispatcher extends ServerDispatcher<ServerMessage>>
 {
 	private final static Logger log = Logger.getLogger("org.greatfree.cry.multicast.child");
 	
-	private Peer eventer;
+//	private Peer eventer;
+	private CryPeer<Dispatcher> eventer;
 	private int treeBranchCount;
 	private String localIPKey;
 	private AtomicInteger cryptoOption;
 
-	public ChildSyncMulticastor(Peer eventer, String localIPKey, int treeBranchCount, int cryptoOption)
+//	public ChildSyncMulticastor(Peer eventer, String localIPKey, int treeBranchCount, int cryptoOption)
+	public ChildSyncMulticastor(CryPeer<Dispatcher> eventer, String localIPKey, int treeBranchCount, int cryptoOption)
 	{
 		this.eventer = eventer;
 		this.localIPKey = localIPKey;
@@ -124,7 +129,8 @@ final class ChildSyncMulticastor
 										IPAddress ip = childrenFromRoot.get(childrenKey);
 //										this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getPeerKey(), ip.getPeerName(), ip.getIP(), ip.getPort()), notification, this.cryptoOption.get());
 //										this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getIP(), ip.getPort()), notification, this.cryptoOption.get());
-										this.eventer.syncCryptoNotifyByIP(ip.getPeerName(), ip, notification, this.cryptoOption.get());
+//										this.eventer.syncCryNotify(ip.getPeerName(), ip, notification, this.cryptoOption.get());
+										this.eventer.syncCryPrmNotify(ip.getPeerName(), ip.getIP(), ip.getPort(), notification, this.cryptoOption.get());
 										// Jump out the loop after sending the message successfully. 11/11/2014, Bing Li
 										break;
 									}
@@ -169,7 +175,8 @@ final class ChildSyncMulticastor
 								IPAddress ip = childrenFromRoot.get(childrenKey);
 //								this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getPeerKey(), ip.getPeerName(), ip.getIP(), ip.getPort()), notification, this.cryptoOption.get());
 //								this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getIP(), ip.getPort()), notification, this.cryptoOption.get());
-								this.eventer.syncCryptoNotifyByIP(ip.getPeerName(), ip, notification, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(ip.getPeerName(), ip, notification, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(ip.getPeerName(), ip.getIP(), ip.getPort(), notification, this.cryptoOption.get());
 							}
 							catch (IOException e)
 							{
@@ -213,7 +220,8 @@ final class ChildSyncMulticastor
 //							this.clientPool.send(new IPPort(message.getIP(serverAddressEntry.getKey())), message);
 //							this.eventer.syncCryptoNotifyByIP(new IPResource(entry.getValue().getPeerKey(), entry.getValue().getPeerName(), entry.getValue().getIP(), entry.getValue().getPort()), notification, this.cryptoOption.get());
 //							this.eventer.syncCryptoNotifyByIP(new IPResource(entry.getValue().getIP(), entry.getValue().getPort()), notification, this.cryptoOption.get());
-							this.eventer.syncCryptoNotifyByIP(entry.getValue().getPeerName(), entry.getValue(), notification, this.cryptoOption.get());
+//							this.eventer.syncCryNotify(entry.getValue().getPeerName(), entry.getValue(), notification, this.cryptoOption.get());
+							this.eventer.syncCryPrmNotify(entry.getValue().getPeerName(), entry.getValue().getIP(), entry.getValue().getPort(), notification, this.cryptoOption.get());
 						}
 						catch (IOException e)
 						{
@@ -297,7 +305,8 @@ final class ChildSyncMulticastor
 										IPAddress ip = childrenFromRoot.get(childrenKey);
 //										this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getPeerKey(), ip.getPeerName(), ip.getIP(), ip.getPort()), request, this.cryptoOption.get());
 //										this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getIP(), ip.getPort()), request, this.cryptoOption.get());
-										this.eventer.syncCryptoNotifyByIP(ip.getPeerName(), ip, request, this.cryptoOption.get());
+//										this.eventer.syncCryNotify(ip.getPeerName(), ip, request, this.cryptoOption.get());
+										this.eventer.syncCryPrmNotify(ip.getPeerName(), ip.getIP(), ip.getPort(), request, this.cryptoOption.get());
 //										System.out.println("1) ChildSyncMulticastor-read(): send to " + childrenFromRoot.get(childrenKey));
 										// Jump out the loop after sending the message successfully. 11/11/2014, Bing Li
 										break;
@@ -342,7 +351,8 @@ final class ChildSyncMulticastor
 								IPAddress ip = childrenFromRoot.get(childrenKey);
 //								this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getPeerKey(), ip.getPeerName(), ip.getIP(), ip.getPort()), request, this.cryptoOption.get());
 //								this.eventer.syncCryptoNotifyByIP(new IPResource(ip.getIP(), ip.getPort()), request, this.cryptoOption.get());
-								this.eventer.syncCryptoNotifyByIP(ip.getPeerName(), ip, request, this.cryptoOption.get());
+//								this.eventer.syncCryNotify(ip.getPeerName(), ip, request, this.cryptoOption.get());
+								this.eventer.syncCryPrmNotify(ip.getPeerName(), ip.getIP(), ip.getPort(), request, this.cryptoOption.get());
 //								System.out.println("2) ChildSyncMulticastor-read(): send to " + childrenFromRoot.get(childrenKey));
 							}
 							catch (IOException e)
@@ -377,7 +387,8 @@ final class ChildSyncMulticastor
 							// Send the message to the immediate node of the local node. 11/11/2014, Bing Li
 //							this.eventer.syncCryptoNotifyByIP(new IPResource(entry.getValue().getPeerKey(), entry.getValue().getPeerName(), entry.getValue().getIP(), entry.getValue().getPort()), request, this.cryptoOption.get());
 //							this.eventer.syncCryptoNotifyByIP(new IPResource(entry.getValue().getIP(), entry.getValue().getPort()), request, this.cryptoOption.get());
-							this.eventer.syncCryptoNotifyByIP(entry.getValue().getPeerName(), entry.getValue(), request, this.cryptoOption.get());
+//							this.eventer.syncCryNotify(entry.getValue().getPeerName(), entry.getValue(), request, this.cryptoOption.get());
+							this.eventer.syncCryPrmNotify(entry.getValue().getPeerName(), entry.getValue().getIP(), entry.getValue().getPort(), request, this.cryptoOption.get());
 //							System.out.println("3) ChildSyncMulticastor-read(): send to " + entry.getValue());
 						}
 						catch (IOException e)

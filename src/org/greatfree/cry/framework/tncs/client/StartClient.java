@@ -14,7 +14,7 @@ import javax.crypto.ShortBufferException;
 import org.greatfree.chat.ClientMenu;
 import org.greatfree.chat.MenuOptions;
 import org.greatfree.cry.client.Client;
-import org.greatfree.cry.framework.tncs.Config;
+import org.greatfree.cry.framework.tncs.CryptoConfig;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.util.IPAddress;
 
@@ -33,10 +33,10 @@ class StartClient
 		System.out.println("Client starting up ...");
 
 		Client client = new Client.ClientBuilder()
-				.serverAddress(new IPAddress("192.168.1.18", Config.CRYPTO_SERVER_PORT))
-				.cipherAlgorithm(Config.AES)
+				.serverAddress(new IPAddress("192.168.1.18", CryptoConfig.CRYPTO_SERVER_PORT))
+				.cipherAlgorithm(CryptoConfig.AES)
 //				.cipherSpec("AES/CBC/PKCS5Padding")
-				.cipherSpec(Config.AES_SPEC)
+				.cipherSpec(CryptoConfig.AES_SPEC)
 				.cipherKeyLength(256)
 				.ivKeyLength(128)
 				.build();

@@ -10,6 +10,7 @@ import org.greatfree.cry.messege.AsymmetricEncryptedRequest;
 import org.greatfree.cry.messege.AsymmetricEncryptedResponse;
 import org.greatfree.cry.messege.AsymmetricEncryptedStream;
 import org.greatfree.cry.messege.CryAppID;
+import org.greatfree.cry.messege.EncryptedNotification;
 import org.greatfree.cry.messege.EncryptedRequestStream;
 import org.greatfree.cry.messege.OwnershipRequest;
 import org.greatfree.cry.messege.OwnershipResponse;
@@ -46,20 +47,21 @@ import org.greatfree.server.container.ServerProfile;
  * It is necessary to rewrite the dispatcher to run the cryptography-related techniques. 01/06/2022, Bing Li
  *
  */
-class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
+public class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 {
 	private final static Logger log = Logger.getLogger("org.greatfree.cry.server");
 
 //	private NotificationDispatcher<EncryptedNotification, EncryptedNotificationThread, EncryptedNotificationThreadCreator> notificationDispatcher;
-	private NotificationDispatcher<Notification, EncryptedNotificationThread, EncryptedNotificationThreadCreator> notificationDispatcher;
+	private NotificationDispatcher<Notification, PlainNotificationThread, PlainNotificationThreadCreator> notifyDispatcher;
+	private NotificationDispatcher<EncryptedNotification, SymmetricEncryptedNotificationThread, SymmetricEncryptedNotificationThreadCreator> symNotifyDispatcher;
 	private NotificationDispatcher<AsymmetricEncryptedNotification, AsymmetricEncryptedNotificationThread, AsymmetricEncryptedNotificationThreadCreator> asymNotifyDispatcher;
 	private NotificationDispatcher<SignedAsymmetricEncryptedNotification, SignedAsymmetricEncryptedNotificationThread, SignedAsymmetricEncryptedNotificationThreadCreator> signedNotifyDispatcher;
 	private NotificationDispatcher<PrivateNotification, PrivateNotificationThread, PrivateNotificationThreadCreator> privateNotifyDispatcher;
 
 	//	private RequestDispatcher<EncryptedRequest, EncryptedRequestStream, EncryptedResponse, EncryptedRequestThread, EncryptedRequestThreadCreator> requestDispatcher;
 	private RequestDispatcher<Request, EncryptedRequestStream, ServerMessage, EncryptedRequestThread, EncryptedRequestThreadCreator> requestDispatcher;
-	private RequestDispatcher<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator> symReqDispatcher;
 	private RequestDispatcher<AsymmetricEncryptedRequest, AsymmetricEncryptedStream, AsymmetricEncryptedResponse, AsymmetricEncryptedThread, AsymmetricEncryptedThreadCreator> asymReqDispatcher;
+	private RequestDispatcher<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator> symCryReqDispatcher;
 	private RequestDispatcher<PublicCryptoSessionRequest, PublicCryptoSessionStream, PublicCryptoSessionResponse, PublicCryptoSessionThread, PublicCryptoSessionThreadCreator> pubReqDispatcher;
 	private RequestDispatcher<SignedAsymmetricEncryptedRequest, SignedAsymmetricEncryptedStream, SignedAsymmetricEncryptedResponse, SignedAsymmetricEncryptedThread, SignedAsymmetricEncryptedThreadCreator> signedReqDispatcher;
 	private RequestDispatcher<OwnershipRequest, OwnershipStream, OwnershipResponse, OwnershipThread, OwnershipThreadCreator> ownReqDispatcher;
@@ -75,10 +77,22 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 		if (ServerProfile.CS().isDefault())
 		{
 //			this.notificationDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<EncryptedNotification, EncryptedNotificationThread, EncryptedNotificationThreadCreator>()
-			this.notificationDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<Notification, EncryptedNotificationThread, EncryptedNotificationThreadCreator>()
+			this.notifyDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<Notification, PlainNotificationThread, PlainNotificationThreadCreator>()
 					.serverKey(super.getServerKey())
 					.poolSize(ServerConfig.NOTIFICATION_DISPATCHER_POOL_SIZE)
-					.threadCreator(new EncryptedNotificationThreadCreator())
+					.threadCreator(new PlainNotificationThreadCreator())
+					.notificationQueueSize(ServerConfig.NOTIFICATION_QUEUE_SIZE)
+					.dispatcherWaitTime(ServerConfig.NOTIFICATION_DISPATCHER_WAIT_TIME)
+					.waitRound(ServerConfig.NOTIFICATION_DISPATCHER_WAIT_ROUND)
+					.idleCheckDelay(ServerConfig.NOTIFICATION_DISPATCHER_IDLE_CHECK_DELAY)
+					.idleCheckPeriod(ServerConfig.NOTIFICATION_DISPATCHER_IDLE_CHECK_PERIOD)
+					.scheduler(super.getScheduler())
+					.build();
+
+			this.symNotifyDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<EncryptedNotification, SymmetricEncryptedNotificationThread, SymmetricEncryptedNotificationThreadCreator>()
+					.serverKey(super.getServerKey())
+					.poolSize(ServerConfig.NOTIFICATION_DISPATCHER_POOL_SIZE)
+					.threadCreator(new SymmetricEncryptedNotificationThreadCreator())
 					.notificationQueueSize(ServerConfig.NOTIFICATION_QUEUE_SIZE)
 					.dispatcherWaitTime(ServerConfig.NOTIFICATION_DISPATCHER_WAIT_TIME)
 					.waitRound(ServerConfig.NOTIFICATION_DISPATCHER_WAIT_ROUND)
@@ -136,7 +150,7 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 					.scheduler(super.getScheduler())
 					.build();
 
-			this.symReqDispatcher = new RequestDispatcher.RequestDispatcherBuilder<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator>()
+			this.symCryReqDispatcher = new RequestDispatcher.RequestDispatcherBuilder<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator>()
 					.serverKey(super.getServerKey())
 					.poolSize(ServerConfig.REQUEST_DISPATCHER_POOL_SIZE)
 					.threadCreator(new SymmetricCryptoSessionThreadCreator())
@@ -211,10 +225,22 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 		else
 		{
 //			this.notificationDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<EncryptedNotification, EncryptedNotificationThread, EncryptedNotificationThreadCreator>()
-			this.notificationDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<Notification, EncryptedNotificationThread, EncryptedNotificationThreadCreator>()
+			this.notifyDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<Notification, PlainNotificationThread, PlainNotificationThreadCreator>()
 					.serverKey(super.getServerKey())
 					.poolSize(ServerProfile.CS().getNotificationDispatcherPoolSize())
-					.threadCreator(new EncryptedNotificationThreadCreator())
+					.threadCreator(new PlainNotificationThreadCreator())
+					.notificationQueueSize(ServerProfile.CS().getNotificationQueueSize())
+					.dispatcherWaitTime(ServerProfile.CS().getNotificationDispatcherWaitTime())
+					.waitRound(ServerProfile.CS().getNotificationDispatcherWaitRound())
+					.idleCheckDelay(ServerProfile.CS().getNotificationDispatcherIdleCheckDelay())
+					.idleCheckPeriod(ServerProfile.CS().getNotificationDispatcherIdleCheckPeriod())
+					.scheduler(super.getScheduler())
+					.build();
+
+			this.symNotifyDispatcher = new NotificationDispatcher.NotificationDispatcherBuilder<EncryptedNotification, SymmetricEncryptedNotificationThread, SymmetricEncryptedNotificationThreadCreator>()
+					.serverKey(super.getServerKey())
+					.poolSize(ServerProfile.CS().getNotificationDispatcherPoolSize())
+					.threadCreator(new SymmetricEncryptedNotificationThreadCreator())
 					.notificationQueueSize(ServerProfile.CS().getNotificationQueueSize())
 					.dispatcherWaitTime(ServerProfile.CS().getNotificationDispatcherWaitTime())
 					.waitRound(ServerProfile.CS().getNotificationDispatcherWaitRound())
@@ -272,7 +298,7 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 					.scheduler(super.getScheduler())
 					.build();
 
-			this.symReqDispatcher = new RequestDispatcher.RequestDispatcherBuilder<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator>()
+			this.symCryReqDispatcher = new RequestDispatcher.RequestDispatcherBuilder<SymmetricCryptoSessionRequest, SymmetricCryptoSessionStream, SymmetricCryptoSessionResponse, SymmetricCryptoSessionThread, SymmetricCryptoSessionThreadCreator>()
 					.serverKey(super.getServerKey())
 					.poolSize(ServerProfile.CS().getRequestDispatcherPoolSize())
 					.threadCreator(new SymmetricCryptoSessionThreadCreator())
@@ -350,14 +376,16 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 	public void dispose(long timeout) throws InterruptedException
 	{
 		super.shutdown(timeout);
-		this.notificationDispatcher.dispose();
+		this.notifyDispatcher.dispose();
+		this.symNotifyDispatcher.dispose();
 		this.asymNotifyDispatcher.dispose();
 		this.signedNotifyDispatcher.dispose();
 		this.privateNotifyDispatcher.dispose();
 		
 		this.requestDispatcher.dispose();
-		this.symReqDispatcher.dispose();
 		this.asymReqDispatcher.dispose();
+
+		this.symCryReqDispatcher.dispose();
 		this.pubReqDispatcher.dispose();
 		this.signedReqDispatcher.dispose();
 		this.ownReqDispatcher.dispose();
@@ -374,6 +402,15 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 				log.info("NOTIFICATION received @" + Calendar.getInstance().getTime());
 				switch (notification.getApplicationID())
 				{
+					case CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION:
+						log.info("SYMMETRIC_ENCRYPTED_NOTIFICATION received @" + Calendar.getInstance().getTime());
+						if (!this.symNotifyDispatcher.isReady())
+						{
+							super.execute(this.symNotifyDispatcher);
+						}
+						this.symNotifyDispatcher.enqueue((EncryptedNotification)notification);
+						break;
+
 					case CryAppID.ASYMMETRIC_ENCRYPTED_NOTIFICATION:
 						log.info("ASYMMETRIC_ENCRYPTED_NOTIFICATION received @" + Calendar.getInstance().getTime());
 						if (!this.asymNotifyDispatcher.isReady())
@@ -402,13 +439,13 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 						break;
 						
 					default:
-						if (!this.notificationDispatcher.isReady())
+						if (!this.notifyDispatcher.isReady())
 						{
-							super.execute(this.notificationDispatcher);
+							super.execute(this.notifyDispatcher);
 						}
 //							this.notificationDispatcher.enqueue((EncryptedNotification)message.getMessage());
 //							this.notificationDispatcher.enqueue((Notification)message.getMessage());
-						this.notificationDispatcher.enqueue(notification);
+						this.notifyDispatcher.enqueue(notification);
 						break;
 				}
 				break;
@@ -420,11 +457,11 @@ class CryptoCSDispatcher extends ServerDispatcher<ServerMessage>
 				{
 					case CryAppID.SYMMETRIC_CRYPTO_SESSION_REQUEST:
 						log.info("SYMMETRIC_CRYPTO_SESSION_REQUEST received @" + Calendar.getInstance().getTime());
-						if (!this.symReqDispatcher.isReady())
+						if (!this.symCryReqDispatcher.isReady())
 						{
-							super.execute(this.symReqDispatcher);
+							super.execute(this.symCryReqDispatcher);
 						}
-						this.symReqDispatcher.enqueue(new SymmetricCryptoSessionStream(message.getOutStream(), message.getLock(), (SymmetricCryptoSessionRequest)message.getMessage()));
+						this.symCryReqDispatcher.enqueue(new SymmetricCryptoSessionStream(message.getOutStream(), message.getLock(), (SymmetricCryptoSessionRequest)message.getMessage()));
 						break;
 						
 					case CryAppID.ASYMMETRIC_ENCRYPTED_REQUEST:

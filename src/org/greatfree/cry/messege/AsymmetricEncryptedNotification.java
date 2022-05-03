@@ -12,21 +12,23 @@ public class AsymmetricEncryptedNotification extends EncryptedNotification
 	private static final long serialVersionUID = 8923447670806100825L;
 	
 	private byte[] encryptedSymCrypto;
-	private boolean isServerMessage;
+//	private boolean isServerMessage;
 
 	public AsymmetricEncryptedNotification(String sessionKey, byte[] encryptedData, byte[] encryptedSymCrypto)
 	{
 		super(CryAppID.ASYMMETRIC_ENCRYPTED_NOTIFICATION, sessionKey, encryptedData);
 		this.encryptedSymCrypto = encryptedSymCrypto;
-		this.isServerMessage = false;
+//		this.isServerMessage = false;
 	}
 
+	/*
 	public AsymmetricEncryptedNotification(String sessionKey, byte[] encryptedData, byte[] encryptedSymCrypto, boolean isServerMessage)
 	{
 		super(CryAppID.ASYMMETRIC_ENCRYPTED_NOTIFICATION, sessionKey, encryptedData);
 		this.encryptedSymCrypto = encryptedSymCrypto;
 		this.isServerMessage = isServerMessage;
 	}
+	*/
 
 	public AsymmetricEncryptedNotification(int encryptionID, String sessionKey, byte[] encryptedData, byte[] encryptedSymCrypto)
 	{
@@ -38,9 +40,11 @@ public class AsymmetricEncryptedNotification extends EncryptedNotification
 	{
 		return this.encryptedSymCrypto;
 	}
-	
+
+	/*
 	public boolean isServerMessage()
 	{
 		return this.isServerMessage;
 	}
+	*/
 }

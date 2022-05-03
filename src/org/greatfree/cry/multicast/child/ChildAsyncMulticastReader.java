@@ -3,7 +3,9 @@ package org.greatfree.cry.multicast.child;
 import org.greatfree.concurrency.AsyncPool;
 import org.greatfree.concurrency.ThreadPool;
 import org.greatfree.data.ClientConfig;
+import org.greatfree.message.ServerMessage;
 import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.server.ServerDispatcher;
 
 /**
  * 
@@ -12,12 +14,13 @@ import org.greatfree.message.multicast.MulticastRequest;
  * 04/10/2022
  *
  */
-final class ChildAsyncMulticastReader
+// final class ChildAsyncMulticastReader<Dispatcher extends CryptoCSDispatcher>
+final class ChildAsyncMulticastReader<Dispatcher extends ServerDispatcher<ServerMessage>>
 {
 	private AsyncPool<MulticastRequest> actor;
 	private ThreadPool pool;
 
-	public ChildAsyncMulticastReader(ChildSyncMulticastor multicastor, ThreadPool pool)
+	public ChildAsyncMulticastReader(ChildSyncMulticastor<Dispatcher> multicastor, ThreadPool pool)
 	{
 		this.actor = new AsyncPool.ActorPoolBuilder<MulticastRequest>()
 				.messageQueueSize(ClientConfig.ASYNC_EVENT_QUEUE_SIZE)
@@ -29,7 +32,7 @@ final class ChildAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildReadActor(multicastor))
+				.actor(new ChildReadActor<Dispatcher>(multicastor))
 				.build();
 		
 		this.pool = pool;

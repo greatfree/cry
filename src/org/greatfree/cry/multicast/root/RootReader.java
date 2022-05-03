@@ -16,6 +16,7 @@ import org.greatfree.concurrency.ThreadPool;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.message.multicast.MulticastRequest;
@@ -36,18 +37,18 @@ import org.greatfree.multicast.root.SizeMulticastRequest;
  * 04/08/2022
  *
  */
-final class RootReader
+final class RootReader<Dispatcher extends CryptoCSDispatcher>
 {
-	private RootSyncMulticastor multicastor;
+	private RootSyncMulticastor<Dispatcher> multicastor;
 
-	private RootAsyncMulticastReader asyncReader;
+	private RootAsyncMulticastReader<Dispatcher> asyncReader;
 
 	private RootRendezvousPoint rp;
 
-	public RootReader(RootSyncMulticastor multicastor, long waitTime, ThreadPool pool)
+	public RootReader(RootSyncMulticastor<Dispatcher> multicastor, long waitTime, ThreadPool pool)
 	{
 //		this.asyncReader = new RootAsyncMulticastReader(multicastor, cryptoOption, pool);
-		this.asyncReader = new RootAsyncMulticastReader(multicastor, pool);
+		this.asyncReader = new RootAsyncMulticastReader<Dispatcher>(multicastor, pool);
 
 		this.rp = new RootRendezvousPoint(waitTime);
 		this.multicastor = multicastor;

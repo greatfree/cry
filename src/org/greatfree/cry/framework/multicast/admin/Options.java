@@ -7,7 +7,7 @@ package org.greatfree.cry.framework.multicast.admin;
  * 04/13/2022
  *
  */
-final class Options
+public final class Options
 {
 	public final static int NO_OPTION = -1;
 	public final static int QUIT = 0;

@@ -60,6 +60,7 @@ class SignedAsymmetricEncryptedNotificationThread extends NotificationQueue<Sign
 					{
 						log.info("Exception: The machine is not owned by " + e.getSignature());
 					}
+					super.disposeMessage(notification);
 				}
 				catch (InterruptedException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
 						| InvalidAlgorithmParameterException | ShortBufferException | IllegalBlockSizeException

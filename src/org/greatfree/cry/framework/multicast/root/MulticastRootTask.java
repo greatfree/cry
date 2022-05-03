@@ -30,13 +30,16 @@ import org.greatfree.cry.framework.multicast.message.HelloWorldBroadcastResponse
 import org.greatfree.cry.framework.multicast.message.HelloWorldUnicastResponse;
 import org.greatfree.cry.framework.multicast.message.MultiAppID;
 import org.greatfree.cry.framework.multicast.message.StopChildrenNotification;
+import org.greatfree.cry.multicast.MulticastTask;
 import org.greatfree.data.ServerConfig;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.message.ServerMessage;
 import org.greatfree.message.container.Notification;
 import org.greatfree.message.container.Request;
-import org.greatfree.server.container.ServerTask;
+import org.greatfree.message.multicast.MulticastNotification;
+import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.message.multicast.MulticastResponse;
 import org.greatfree.util.Time;
 
 /**
@@ -46,7 +49,8 @@ import org.greatfree.util.Time;
  * 04/10/2022
  *
  */
-final class MulticastRootTask implements ServerTask
+// final class MulticastRootTask implements ServerTask
+final class MulticastRootTask extends MulticastTask
 {
 	private final static Logger log = Logger.getLogger("org.greatfree.cry.framework.multicast.root");
 
@@ -111,7 +115,13 @@ final class MulticastRootTask implements ServerTask
 					e.printStackTrace();
 				}
 				break;
-				
+
+				/*
+				 * 
+				 * The below code is useful, but the lines are commented temporarily before the revision of multicasting is done. 04/28/2022, Bing Li
+				 * 
+				 */
+				/*
 			case MultiAppID.HELLO_WORLD_BROADCAST_RESPONSE:
 				log.info("HELLO_WORLD_BROADCAST_RESPONSE received @" + Calendar.getInstance().getTime());
 				try
@@ -147,6 +157,7 @@ final class MulticastRootTask implements ServerTask
 					e.printStackTrace();
 				}
 				break;
+				*/
 				
 			case MultiAppID.ADMIN_STOP_CHILDREN_NOTIFICATION:
 				log.info("ADMIN_STOP_CHILDREN_NOTIFICATION received @" + Calendar.getInstance().getTime());
@@ -255,4 +266,76 @@ final class MulticastRootTask implements ServerTask
 		return null;
 	}
 
+	@Override
+	public void processNotification(MulticastResponse notification)
+	{
+		switch (notification.getApplicationID())
+		{
+			case MultiAppID.HELLO_WORLD_BROADCAST_RESPONSE:
+				log.info("HELLO_WORLD_BROADCAST_RESPONSE received @" + Calendar.getInstance().getTime());
+				try
+				{
+					RootPeer.ROOT().saveResponse((HelloWorldBroadcastResponse)notification);
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+				break;
+				
+			case MultiAppID.HELLO_WORLD_ANYCAST_RESPONSE:
+				log.info("HELLO_WORLD_ANYCAST_RESPONSE received @" + Calendar.getInstance().getTime());
+				try
+				{
+					RootPeer.ROOT().saveResponse((HelloWorldAnycastResponse)notification);
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+				break;
+				
+			case MultiAppID.HELLO_WORLD_UNICAST_RESPONSE:
+				log.info("HELLO_WORLD_UNICAST_RESPONSE received @" + Calendar.getInstance().getTime());
+				try
+				{
+					RootPeer.ROOT().saveResponse((HelloWorldUnicastResponse)notification);
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+				break;
+		}
+		
+	}
+
+	@Override
+	public void processNotification(MulticastNotification notification)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void processRequest(MulticastRequest request)
+	{
+		// TODO Auto-generated method stub
+	}
+
+	/*
+	@Override
+	public void processNotification(ServerMessage notification)
+	{
+		
+		
+	}
+
+	@Override
+	public ServerMessage processRequest(ServerMessage request)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+	*/
 }

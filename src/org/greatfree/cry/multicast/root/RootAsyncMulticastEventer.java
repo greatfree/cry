@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.greatfree.concurrency.AsyncPool;
 import org.greatfree.concurrency.ThreadPool;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 import org.greatfree.data.ClientConfig;
 import org.greatfree.message.multicast.MulticastNotification;
 import org.greatfree.multicast.root.ChildMulticastNotification;
@@ -18,7 +19,7 @@ import org.greatfree.multicast.root.RandomChildrenMulticastNotification;
  * 04/08/2022
  *
  */
-final class RootAsyncMulticastEventer
+final class RootAsyncMulticastEventer<Dispatcher extends CryptoCSDispatcher>
 {
 	private AsyncPool<MulticastNotification> actor;
 	private AsyncPool<ChildrenMulticastNotification> childrenActor;
@@ -29,7 +30,7 @@ final class RootAsyncMulticastEventer
 	private ThreadPool pool;
 
 //	public RootAsyncMulticastEventer(RootSyncMulticastor multicastor, int cryptoOption, ThreadPool pool)
-	public RootAsyncMulticastEventer(RootSyncMulticastor multicastor, ThreadPool pool)
+	public RootAsyncMulticastEventer(RootSyncMulticastor<Dispatcher> multicastor, ThreadPool pool)
 	{
 		this.actor = new AsyncPool.ActorPoolBuilder<MulticastNotification>()
 				.messageQueueSize(ClientConfig.ASYNC_EVENT_QUEUE_SIZE)
@@ -41,7 +42,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RootEventActor(multicastor))
 				.build();
 
@@ -55,7 +56,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildrenRootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new ChildrenRootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new ChildrenRootEventActor(multicastor))
 				.build();
 		
@@ -69,7 +70,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildRootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new ChildRootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new ChildRootEventActor(multicastor))
 				.build();
 		
@@ -83,7 +84,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new NearestRootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new NearestRootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new NearestRootEventActor(multicastor))
 				.build();
 		
@@ -97,7 +98,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RandomRootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RandomRootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RandomRootEventActor(multicastor))
 				.build();
 
@@ -111,7 +112,7 @@ final class RootAsyncMulticastEventer
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RandomChildrenRootEventActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RandomChildrenRootEventActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RandomChildrenRootEventActor(multicastor))
 				.build();
 		

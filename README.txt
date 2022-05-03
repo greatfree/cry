@@ -1,3 +1,107 @@
+05/03/2022, Bing Li
+
+The multicasting with the low-level message, ServerMessage, is finally done.
+
+One trivial bug takes me one night, i.e., disposing the peer.
+
+In the multicasting structure, multiple peers participate.
+
+Some of them leave earlier such that exceptions might be caused when later ones are disposed.
+
+It should not affect later peers' disposing their own resources, such as the dispatchers.
+
+Now the bugs are fixed.
+
+The current lines of code are 32202.
+
+The number of files is 415.
+
+========================================================
+
+04/30/2022, Bing Li
+
+A new version of multicasting is almost done to adapt to the subclasses of ServerMessage rather than revising the multicasting messages to the children of Notification/Request.
+
+Now I need to add the encryption techniques on the plain multicasting.
+
+After that, the clustering can be conveniently implemented.
+
+The current lines of code are 30732.
+
+The number of files is 403.
+
+========================================================
+
+04/29/2022, Bing Li
+
+It took me much time to revise the multicasting as well as program the clustering.
+
+The primary task is to adapt to the messages' types.
+
+Multicasting messages in Wind inherit from the ServerMessage rather than Notification/Request.
+
+Thus, it is necessary to design the code upon ServerDispatcher rather than the Container pattern.
+
+The previous version updates the code of Wind to use the Container pattern.
+
+However, it results in the failure of multicasting and clustering in Wind.
+
+Thus, I restored the initial state of Wind multicasting messages and tried to make changes to WindCry.
+
+It tells us again that the DP of Wind is useful and universal, especially when programming new APIs.
+
+The current lines of code are 30477.
+
+The number of files is 399.
+
+========================================================
+
+04/28/2022, Bing Li
+
+I think only the application-level messages need to be encrypted.
+
+Those messages could be the ones internally among a cluster.
+
+In most cases, the messages are the ones exchanged between one cluster and a client.
+
+Specially, the management messages are not necessarily encrypted.
+
+So they can be the instances of ServerMessage.
+
+I need to update the multicasting upon the concern.
+
+Then, those management manages for clustering from Wind can be retained.
+
+Let me try.
+
+========================================================
+
+04/28/2022, Bing Li
+
+I started to implement the clustering with the support of cryptography algorithms on 04/24/2022.
+
+However, the original clustering in Wind has some instances of ServerMessage.
+
+The current implementation of the cryptography-based Wind, i.e., WindCry, is established upon the subclasses, Notification/Request, of ServerMessage.
+
+It is impossible to convert the instances of Notification/Request to ServerMessage.
+
+To process those instances of ServerMessage, it is suggested to create a new message that inherits from Notification/Request and wraps fields of ServerMessage.
+
+It might be a proper solution.
+
+The current version is not compiled correctly.
+
+Just backup before moving forward.
+
+Another solution is to revise Wind such that its clustering has no instances of ServerMessage.
+
+The current lines of code are 28090.
+
+The current number of files is 394.
+
+========================================================
+
 04/20/2022, Bing Li
 
 Full cryptography algorithms are implemented in the multicasting.
@@ -178,7 +282,7 @@ Testing cases:
 2) A private machine with a single owner (owners' size = 1);
 
 	Only a single user can own the machine;
-	
+
 	Additional users cannot access the machine.
 
 3) A public machine;
@@ -202,7 +306,7 @@ To do that, the peer needs to notify its partners to remove cryptography relevan
 Two messages below are added to do that.
 
 	SaySymmetricByeNotification
-	
+
 	SayAsymmetricByeNotification
 
 The current lines of code are 13843.
@@ -346,13 +450,13 @@ Another difficulty is that it is necessary to find a proper way to keep consiste
 1) Data propagation.
 
 	When to start?
-	
+
 	Where to start?
 
 2) Chain validation.
 
 	When to start?
-	
+
 	Where to start?
 
 If consistency cannot be maintained well, the block chain does not work at all.
@@ -596,5 +700,3 @@ The current number of files is 31.
 I decide to design a new programming paradigm for cryptography with Wind and Bouncy Castle.
 
 It must help spreading of the Wind.
-
-

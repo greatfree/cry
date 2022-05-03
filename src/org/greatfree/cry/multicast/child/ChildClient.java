@@ -14,11 +14,13 @@ import org.greatfree.concurrency.ThreadPool;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
-import org.greatfree.cry.server.Peer;
+import org.greatfree.cry.server.CryPeer;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
+import org.greatfree.message.ServerMessage;
 import org.greatfree.message.multicast.MulticastNotification;
 import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.server.ServerDispatcher;
 import org.greatfree.util.Builder;
 
 /**
@@ -28,11 +30,12 @@ import org.greatfree.util.Builder;
  * 04/10/2022
  *
  */
-public final class ChildClient
+// public final class ChildClient<Dispatcher extends CryptoCSDispatcher>
+public final class ChildClient<Dispatcher extends ServerDispatcher<ServerMessage>>
 {
-	private ChildEventer eventer;
-	private ChildReader reader;
-	private ChildSyncMulticastor multicastor;
+	private ChildEventer<Dispatcher> eventer;
+	private ChildReader<Dispatcher> reader;
+	private ChildSyncMulticastor<Dispatcher> multicastor;
 
 	/*
 	public ChildClient(Peer peer, String localIPKey, int treeBranchCount, ThreadPool pool, int cryptoOption)
@@ -43,16 +46,18 @@ public final class ChildClient
 	}
 	*/
 
-	public ChildClient(ChildClientBuilder builder)
+	public ChildClient(ChildClientBuilder<Dispatcher> builder)
 	{
-		this.multicastor = new ChildSyncMulticastor(builder.getEventer(), builder.getLocalIPKey(), builder.getTreeBranchCount(), builder.getCryptoOption());
-		this.eventer = new ChildEventer(this.multicastor, builder.getPool());
-		this.reader = new ChildReader(this.multicastor, builder.getPool());
+		this.multicastor = new ChildSyncMulticastor<Dispatcher>(builder.getEventer(), builder.getLocalIPKey(), builder.getTreeBranchCount(), builder.getCryptoOption());
+		this.eventer = new ChildEventer<Dispatcher>(this.multicastor, builder.getPool());
+		this.reader = new ChildReader<Dispatcher>(this.multicastor, builder.getPool());
 	}
 
-	public static class ChildClientBuilder implements Builder<ChildClient>
+//	public static class ChildClientBuilder<Dispatcher extends CryptoCSDispatcher> implements Builder<ChildClient<Dispatcher>>
+	public static class ChildClientBuilder<Dispatcher extends ServerDispatcher<ServerMessage>> implements Builder<ChildClient<Dispatcher>>
 	{
-		private Peer eventer;
+//		private Peer eventer;
+		private CryPeer<Dispatcher> eventer;
 		private int treeBranchCount;
 		private String localIPKey;
 		private ThreadPool pool;
@@ -62,43 +67,45 @@ public final class ChildClient
 		{
 		}
 		
-		public ChildClientBuilder eventer(Peer eventer)
+//		public ChildClientBuilder eventer(Peer eventer)
+		public ChildClientBuilder<Dispatcher> eventer(CryPeer<Dispatcher> eventer)
 		{
 			this.eventer = eventer;
 			return this;
 		}
 		
-		public ChildClientBuilder treeBranchCount(int treeBranchCount)
+		public ChildClientBuilder<Dispatcher> treeBranchCount(int treeBranchCount)
 		{
 			this.treeBranchCount = treeBranchCount;
 			return this;
 		}
 		
-		public ChildClientBuilder localIPKey(String localIPKey)
+		public ChildClientBuilder<Dispatcher> localIPKey(String localIPKey)
 		{
 			this.localIPKey = localIPKey;
 			return this;
 		}
 		
-		public ChildClientBuilder pool(ThreadPool pool)
+		public ChildClientBuilder<Dispatcher> pool(ThreadPool pool)
 		{
 			this.pool = pool;
 			return this;
 		}
 		
-		public ChildClientBuilder cryptoOption(int cryptoOption)
+		public ChildClientBuilder<Dispatcher> cryptoOption(int cryptoOption)
 		{
 			this.cryptoOption = cryptoOption;
 			return this;
 		}
 
 		@Override
-		public ChildClient build() throws IOException
+		public ChildClient<Dispatcher> build() throws IOException
 		{
-			return new ChildClient(this);
+			return new ChildClient<Dispatcher>(this);
 		}
 		
-		public Peer getEventer()
+//		public Peer getEventer()
+		public CryPeer<Dispatcher> getEventer()
 		{
 			return this.eventer;
 		}

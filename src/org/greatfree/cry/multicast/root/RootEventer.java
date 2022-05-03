@@ -15,6 +15,7 @@ import org.greatfree.concurrency.ThreadPool;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.message.multicast.MulticastNotification;
@@ -26,19 +27,19 @@ import org.greatfree.message.multicast.MulticastNotification;
  * 04/06/2022
  *
  */
-final class RootEventer
+final class RootEventer<Dispatcher extends CryptoCSDispatcher>
 {
-	private RootSyncMulticastor multicastor;
+	private RootSyncMulticastor<Dispatcher> multicastor;
 	// The instance of the asynchronous based on ActorPool. 09/14/2018, Bing Li
-	private RootAsyncMulticastEventer asyncEventer;
+	private RootAsyncMulticastEventer<Dispatcher> asyncEventer;
 //	private AtomicInteger cryptoOption;
 
 //	public RootEventer(RootSyncMulticastor multicastor, ThreadPool pool, int cryptoOption)
-	public RootEventer(RootSyncMulticastor multicastor, ThreadPool pool)
+	public RootEventer(RootSyncMulticastor<Dispatcher> multicastor, ThreadPool pool)
 	{
 		this.multicastor = multicastor;
 //		this.asyncEventer = new RootAsyncMulticastEventer(this.multicastor, cryptoOption, pool);
-		this.asyncEventer = new RootAsyncMulticastEventer(this.multicastor, pool);
+		this.asyncEventer = new RootAsyncMulticastEventer<Dispatcher>(this.multicastor, pool);
 //		this.cryptoOption = new AtomicInteger(cryptoOption);
 	}
 	

@@ -7,7 +7,7 @@ package org.greatfree.cry.framework.multicast.client;
  * 04/12/2022
  *
  */
-final class MultiOptions
+public final class MultiOptions
 {
 	public final static int NO_OPTION = -1;
 

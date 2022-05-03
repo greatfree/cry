@@ -11,13 +11,13 @@ import org.greatfree.message.container.Notification;
  *
  */
 // class EncryptedNotificationThreadCreator implements NotificationQueueCreator<EncryptedNotification, EncryptedNotificationThread>
-class EncryptedNotificationThreadCreator implements NotificationQueueCreator<Notification, EncryptedNotificationThread>
+class PlainNotificationThreadCreator implements NotificationQueueCreator<Notification, PlainNotificationThread>
 {
 
 	@Override
-	public EncryptedNotificationThread createInstance(int taskSize)
+	public PlainNotificationThread createInstance(int taskSize)
 	{
-		return new EncryptedNotificationThread(taskSize);
+		return new PlainNotificationThread(taskSize);
 	}
 
 }

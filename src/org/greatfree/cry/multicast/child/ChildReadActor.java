@@ -16,7 +16,9 @@ import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
+import org.greatfree.message.ServerMessage;
 import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.server.ServerDispatcher;
 
 /**
  * 
@@ -25,11 +27,12 @@ import org.greatfree.message.multicast.MulticastRequest;
  * 04/10/2022
  *
  */
-final class ChildReadActor extends Async<MulticastRequest>
+// final class ChildReadActor<Dispatcher extends CryptoCSDispatcher> extends Async<MulticastRequest>
+final class ChildReadActor<Dispatcher extends ServerDispatcher<ServerMessage>> extends Async<MulticastRequest>
 {
-	private ChildSyncMulticastor multicastor;
+	private ChildSyncMulticastor<Dispatcher> multicastor;
 	
-	public ChildReadActor(ChildSyncMulticastor multicastor)
+	public ChildReadActor(ChildSyncMulticastor<Dispatcher> multicastor)
 	{
 		this.multicastor = multicastor;
 	}

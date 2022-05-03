@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,15 +40,19 @@ import org.greatfree.cry.messege.SaySymmetricByeNotification;
 import org.greatfree.cry.messege.SignedAsymmetricEncryptedNotification;
 import org.greatfree.cry.messege.SignedAsymmetricEncryptedRequest;
 import org.greatfree.cry.messege.SignedAsymmetricEncryptedResponse;
+import org.greatfree.cry.messege.SignedPrimitiveNotification;
 import org.greatfree.cry.messege.SymmetricBye;
 import org.greatfree.cry.messege.AllOwners;
 import org.greatfree.cry.messege.AsymmetricBye;
 import org.greatfree.cry.messege.AsymmetricEncryptedNotification;
 import org.greatfree.cry.messege.AsymmetricEncryptedRequest;
 import org.greatfree.cry.messege.AsymmetricEncryptedResponse;
+import org.greatfree.cry.messege.AsymmetricPrimitiveNotification;
 import org.greatfree.cry.messege.CryAppID;
 import org.greatfree.cry.messege.SymmetricCryptoSessionRequest;
 import org.greatfree.cry.messege.SymmetricCryptoSessionResponse;
+import org.greatfree.cry.messege.SymmetricPrimitiveNotification;
+import org.greatfree.cry.multicast.MulticastTask;
 import org.greatfree.cry.messege.EncryptedNotification;
 import org.greatfree.cry.messege.EncryptedRequest;
 import org.greatfree.cry.messege.EncryptedResponse;
@@ -57,11 +62,16 @@ import org.greatfree.cry.messege.OwnerInfo;
 import org.greatfree.cry.messege.OwnershipRequest;
 import org.greatfree.cry.messege.OwnershipResponse;
 import org.greatfree.cry.messege.PrivateNotification;
+import org.greatfree.cry.messege.PrivatePrimitiveNotification;
 import org.greatfree.cry.messege.PrivateRequest;
 import org.greatfree.cry.messege.PrivateResponse;
 import org.greatfree.message.ServerMessage;
 import org.greatfree.message.container.Notification;
 import org.greatfree.message.container.Request;
+import org.greatfree.message.multicast.MulticastMessageType;
+import org.greatfree.message.multicast.MulticastNotification;
+import org.greatfree.message.multicast.MulticastRequest;
+import org.greatfree.message.multicast.MulticastResponse;
 import org.greatfree.server.container.PeerContainer;
 import org.greatfree.server.container.ServerTask;
 import org.greatfree.util.IPAddress;
@@ -73,7 +83,7 @@ import org.greatfree.util.IPAddress;
  *         01/04/2022, Bing Li
  *
  */
-class ServiceProvider
+public final class ServiceProvider
 {
 	private final static Logger log = Logger.getLogger("org.greatfree.cry.server");
 
@@ -88,6 +98,7 @@ class ServiceProvider
 	private Map<String, String> ipPeers;
 	
 	private Map<String, ServerTask> tasks;
+//	private Map<String, MulticastTask> tasks;
 
 	private Map<String, SymmetricCrypto> symmetricCryptos;
 
@@ -108,6 +119,7 @@ class ServiceProvider
 	private ServiceProvider()
 	{
 		this.tasks = new ConcurrentHashMap<String, ServerTask>();
+//		this.tasks = new ConcurrentHashMap<String, MulticastTask>();
 		this.symmetricCryptos = new ConcurrentHashMap<String, SymmetricCrypto>();
 		this.publicCryptos = new ConcurrentHashMap<String, PublicCrypto>();
 		this.ips = new ConcurrentHashMap<String, IPAddress>();
@@ -138,6 +150,7 @@ class ServiceProvider
 	/*
 	 * The initialization is called only by Server. 03/21/2022, Bing Li
 	 */
+//	public void init(String serverKey, MulticastTask task)
 	public void init(String serverKey, ServerTask task)
 	{
 		this.tasks.put(serverKey, task);
@@ -154,9 +167,11 @@ class ServiceProvider
 	/*
 	 * The initialization is called only by Peer. 03/21/2022, Bing Li
 	 */
+//	public void init(String hostPeerName, String serverKey, MulticastTask task, AsymmetricCrypto asymCrypto)
 	public void init(String hostPeerName, String serverKey, ServerTask task, AsymmetricCrypto asymCrypto)
 	{
 		this.hostPeerName = hostPeerName;
+//		log.info("serverKey for task = " + serverKey);
 		this.tasks.put(serverKey, task);
 		this.asymCrypto = asymCrypto;
 	}
@@ -404,12 +419,63 @@ class ServiceProvider
 //		this.symmetricCryptos.put(request.getCrypto().getPeerKey(), request.getCrypto());
 		return new SymmetricCryptoSessionResponse(true);
 	}
-	
-	public void processNotification(String serverKey, Notification notification) throws NonPublicMachineException
+
+	/*
+	public void processNotification(String serverKey, ServerMessage notification) throws NonPublicMachineException
 	{
 		if (!this.isPrivate)
 		{
 			this.tasks.get(serverKey).processNotification(notification);
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+	*/
+
+	public void processNotification(String serverKey, Notification notification) throws NonPublicMachineException
+	{
+		if (!this.isPrivate)
+		{
+//			log.info("Before processing service notifications ...");
+			this.tasks.get(serverKey).processNotification(notification);
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+	
+	public void processMulticastNotification(String serverKey, MulticastNotification notification) throws NonPublicMachineException
+	{
+		if (!this.isPrivate)
+		{
+			((MulticastTask)this.tasks.get(serverKey)).processNotification(notification);
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+
+	public void processMulticastRequest(String serverKey, MulticastRequest notification) throws NonPublicMachineException
+	{
+		if (!this.isPrivate)
+		{
+			((MulticastTask)this.tasks.get(serverKey)).processRequest(notification);
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+	
+	public void processMulticastResponse(String serverKey, MulticastResponse notification) throws NonPublicMachineException
+	{
+		if (!this.isPrivate)
+		{
+			((MulticastTask)this.tasks.get(serverKey)).processNotification(notification);
 		}
 		else
 		{
@@ -436,6 +502,20 @@ class ServiceProvider
 			SymmetricCrypto sc = this.symmetricCryptos.get(notification.getSessionKey());
 			log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
 			this.tasks.get(serverKey).processNotification(SymmetricCoder.decryptNotification(notification.getEncryptedData(), sc.getCipherKey(), sc.getIVKey(), sc.getCipherSpec()));
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+
+	public void processSymmetricNotification(String serverKey, SymmetricPrimitiveNotification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, NonPublicMachineException
+	{
+		if (!this.isPrivate)
+		{
+			SymmetricCrypto sc = this.symmetricCryptos.get(notification.getSessionKey());
+			log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
+			this.processPrimitive(serverKey, SymmetricCoder.decryptMessage(notification.getEncryptedData(), sc.getCipherKey(), sc.getIVKey(), sc.getCipherSpec()));
 		}
 		else
 		{
@@ -530,6 +610,28 @@ class ServiceProvider
 		}
 	}
 
+	public void processAsymmetricNotification(String serverKey, AsymmetricPrimitiveNotification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, NonPublicMachineException, SessionMismatchedException
+	{
+		if (!this.isPrivate)
+		{
+			if (this.asymCrypto.getSessionKey().equals(notification.getSessionKey()))
+			{
+				AsymCompCrypto scrypto = (AsymCompCrypto)AsymmetricCoder.decrypt(notification.getEncryptedSymCrypto(), this.asymCrypto.getAsymAlgorithm(), this.asymCrypto.getPrivateKey());
+				log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
+				this.processPrimitive(serverKey, SymmetricCoder.decryptMessage(notification.getEncryptedData(), scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec()));
+			}
+			else
+			{
+				log.info("Session mismatched!");
+				throw new SessionMismatchedException("The session of asymmetric encrypted notification mismatched!");
+			}
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+
 	/*
 	public boolean isOwner(String owner, Notification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, SignatureException
 	{
@@ -584,6 +686,46 @@ class ServiceProvider
 						log.info(publicKey.getSignature() + " is notifying to you!");
 						log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
 						this.tasks.get(serverKey).processNotification(SymmetricCoder.decryptNotification(notification.getEncryptedData(), scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec()));
+					}
+					else
+					{
+						log.info("Someone is cheating as " + publicKey.getSignature());
+						throw new CheatingException(publicKey.getSignature());
+					}
+				}
+				else
+				{
+					log.info("Public key is not found!");
+					throw new PublicKeyUnavailableException(scrypto.getPeerKey());
+				}
+			}
+			else
+			{
+				log.info("Session mismatched!");
+				throw new SessionMismatchedException("The session of signed asymmetric encrypted notification mismatched!");
+			}
+		}
+		else
+		{
+			throw new NonPublicMachineException("The machine is non-public!");
+		}
+	}
+
+	public void processAsymmetricNotification(String serverKey, SignedPrimitiveNotification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, SignatureException, CheatingException, PublicKeyUnavailableException, NonPublicMachineException, SessionMismatchedException
+	{
+		if (!this.isPrivate)
+		{
+			if (this.asymCrypto.getSessionKey().equals(notification.getSessionKey()))
+			{
+				AsymCompCrypto scrypto = (AsymCompCrypto)AsymmetricCoder.decrypt(notification.getEncryptedSymCrypto(), this.asymCrypto.getAsymAlgorithm(), this.asymCrypto.getPrivateKey());
+				PublicCrypto publicKey = this.getPublicCryptoByPeer(scrypto.getPeerKey());
+				if (publicKey != null)
+				{
+					if (this.isSignatureTrusted(notification.getSignature(), notification.getEncryptedSignature(), false))
+					{
+						log.info(publicKey.getSignature() + " is notifying to you!");
+						log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
+						this.processPrimitive(serverKey, SymmetricCoder.decryptMessage(notification.getEncryptedData(), scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec()));
 					}
 					else
 					{
@@ -668,6 +810,60 @@ class ServiceProvider
 		}
 	}
 
+	public void processAsymmetricNotification(String serverKey, PrivatePrimitiveNotification notification) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, SignatureException, CheatingException, PublicKeyUnavailableException, OwnerCheatingException, NonPrivateMachineException, SessionMismatchedException, MachineNotOwnedException
+	{
+		if (this.isPrivate)
+		{
+			if (this.asymCrypto.getSessionKey().equals(notification.getSessionKey()))
+			{
+				AsymCompCrypto scrypto = (AsymCompCrypto)AsymmetricCoder.decrypt(notification.getEncryptedSymCrypto(), this.asymCrypto.getAsymAlgorithm(), this.asymCrypto.getPrivateKey());
+				PublicCrypto publicKey = this.getPublicCryptoByPeer(scrypto.getPeerKey());
+				if (publicKey != null)
+				{
+					if (this.isSignatureTrusted(notification.getSignature(), notification.getEncryptedSignature(), false))
+					{
+						if (this.owners.containsKey(notification.getSignature()))
+						{
+							log.info("owner = " + this.owners.get(notification.getSignature()));
+							log.info("notification's ownerName = " + notification.getOwnerName());
+							log.info("notification's signature = " + notification.getSignature());
+							if (!notification.getOwnerName().equals(this.owners.get(notification.getSignature()).getOwnerName()) || !notification.getSignature().equals(this.owners.get(notification.getSignature()).getSignature()))
+							{
+								log.info("Someone is cheating as " + notification.getOwnerName());
+								throw new OwnerCheatingException(notification.getOwnerName());
+							}
+							log.info(publicKey.getSignature() + " is notifying to you!");
+							log.info("Received Encrypted Notification: " + Hex.toHexString(notification.getEncryptedData()));
+							this.processPrimitive(serverKey, SymmetricCoder.decryptMessage(notification.getEncryptedData(), scrypto.getCipherKey(), scrypto.getIVKey(), scrypto.getCipherSpec()));
+						}
+						else
+						{
+							throw new MachineNotOwnedException(publicKey.getSignature());
+						}
+					}
+					else
+					{
+						log.info("Someone is cheating as " + publicKey.getSignature());
+						throw new CheatingException(publicKey.getSignature());
+					}
+				}
+				else
+				{
+					log.info("Public key is not found!");
+					throw new PublicKeyUnavailableException(scrypto.getPeerKey());
+				}
+			}
+			else
+			{
+				log.info("Session mismatched!");
+				throw new SessionMismatchedException("The session of private notification mismatched!");
+			}
+		}
+		else
+		{
+			throw new NonPrivateMachineException("The machine is non-private!");
+		}
+	}
 	
 //	public EncryptedResponse processAsymmetricRequest(String serverKey, EncryptedRequest request) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException
 	public AsymmetricEncryptedResponse processAsymmetricRequest(String serverKey, AsymmetricEncryptedRequest request) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException, PublicKeyUnavailableException, NonPublicMachineException, SessionMismatchedException
@@ -975,6 +1171,27 @@ class ServiceProvider
 		else
 		{
 			return false;
+		}
+	}
+	
+	private void processPrimitive(String serverKey, ServerMessage message)
+	{
+		switch (message.getType())
+		{
+			case MulticastMessageType.MULTICAST_RESPONSE:
+				log.info("MULTICAST_RESPONSE received @" + Calendar.getInstance().getTime());
+				((MulticastTask)this.tasks.get(serverKey)).processNotification((MulticastResponse)message);
+				break;
+				
+			case MulticastMessageType.MULTICAST_NOTIFICATION:
+				log.info("MULTICAST_NOTIFICATION received @" + Calendar.getInstance().getTime());
+				((MulticastTask)this.tasks.get(serverKey)).processNotification((MulticastNotification)message);
+				break;
+				
+			case MulticastMessageType.MULTICAST_REQUEST:
+				log.info("MULTICAST_NOTIFICATION received @" + Calendar.getInstance().getTime());
+				((MulticastTask)this.tasks.get(serverKey)).processRequest((MulticastRequest)message);
+				break;
 		}
 	}
 }

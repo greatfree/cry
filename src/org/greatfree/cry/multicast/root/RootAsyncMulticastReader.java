@@ -2,6 +2,7 @@ package org.greatfree.cry.multicast.root;
 
 import org.greatfree.concurrency.AsyncPool;
 import org.greatfree.concurrency.ThreadPool;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 import org.greatfree.data.ClientConfig;
 import org.greatfree.message.multicast.MulticastRequest;
 import org.greatfree.multicast.root.ChildKeyMulticastRequest;
@@ -19,7 +20,7 @@ import org.greatfree.multicast.root.SizeMulticastRequest;
  * 04/08/2022
  *
  */
-final class RootAsyncMulticastReader
+final class RootAsyncMulticastReader<Dispatcher extends CryptoCSDispatcher>
 {
 	private AsyncPool<MulticastRequest> actor;
 	private AsyncPool<SizeMulticastRequest> sizeActor;
@@ -36,7 +37,7 @@ final class RootAsyncMulticastReader
 	private ThreadPool pool;
 	
 //	public RootAsyncMulticastReader(RootSyncMulticastor multicastor, int cryptoOption, ThreadPool pool)
-	public RootAsyncMulticastReader(RootSyncMulticastor multicastor, ThreadPool pool)
+	public RootAsyncMulticastReader(RootSyncMulticastor<Dispatcher> multicastor, ThreadPool pool)
 	{
 		this.actor = new AsyncPool.ActorPoolBuilder<MulticastRequest>()
 				.messageQueueSize(ClientConfig.ASYNC_EVENT_QUEUE_SIZE)
@@ -48,7 +49,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RootReadActor(multicastor))
 				.build();
 
@@ -62,7 +63,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new SizeRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new SizeRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new SizeRootReadActor(multicastor))
 				.build();
 
@@ -76,7 +77,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildrenRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new ChildrenRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new ChildrenRootReadActor(multicastor))
 				.build();
 
@@ -90,7 +91,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildrenSizeRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new ChildrenSizeRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new ChildrenSizeRootReadActor(multicastor))
 				.build();
 
@@ -104,7 +105,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new NearestKeysRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new NearestKeysRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new NearestKeysRootReadActor(multicastor))
 				.build();
 
@@ -118,7 +119,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new NearestKeyRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new NearestKeyRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new NearestKeyRootReadActor(multicastor))
 				.build();
 
@@ -132,7 +133,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RandomRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RandomRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RandomRootReadActor(multicastor))
 				.build();
 
@@ -146,7 +147,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new ChildKeyRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new ChildKeyRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new ChildKeyRootReadActor(multicastor))
 				.build();
 
@@ -160,7 +161,7 @@ final class RootAsyncMulticastReader
 				.idleCheckPeriod(ClientConfig.ASYNC_EVENT_IDLE_CHECK_PERIOD)
 				.schedulerPoolSize(ClientConfig.SCHEDULER_POOL_SIZE)
 				.schedulerKeepAliveTime(ClientConfig.SCHEDULER_KEEP_ALIVE_TIME)
-				.actor(new RandomChildrenRootReadActor(multicastor, multicastor.getCryptoOption()))
+				.actor(new RandomChildrenRootReadActor<Dispatcher>(multicastor, multicastor.getCryptoOption()))
 //				.actor(new RandomChildrenRootReadActor(multicastor))
 				.build();
 

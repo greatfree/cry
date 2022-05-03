@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.Calendar;
 import java.util.logging.Logger;
 
@@ -14,16 +13,9 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 
 import org.greatfree.concurrency.reactive.NotificationQueue;
-import org.greatfree.cry.exceptions.CheatingException;
-import org.greatfree.cry.exceptions.MachineNotOwnedException;
-import org.greatfree.cry.exceptions.NonPrivateMachineException;
 import org.greatfree.cry.exceptions.NonPublicMachineException;
-import org.greatfree.cry.exceptions.OwnerCheatingException;
-import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SessionMismatchedException;
 import org.greatfree.cry.messege.CryAppID;
-import org.greatfree.cry.messege.EncryptedNotification;
-import org.greatfree.cry.messege.PrivateNotification;
 import org.greatfree.cry.messege.SayAsymmetricByeNotification;
 import org.greatfree.cry.messege.SaySymmetricByeNotification;
 import org.greatfree.data.ServerConfig;
@@ -40,11 +32,11 @@ import org.greatfree.util.ServerStatus;
  *
  */
 // class EncryptedNotificationThread extends NotificationQueue<EncryptedNotification>
-class EncryptedNotificationThread extends NotificationQueue<Notification>
+class PlainNotificationThread extends NotificationQueue<Notification>
 {
 	private final static Logger log = Logger.getLogger("org.greatfree.cry.server");
 
-	public EncryptedNotificationThread(int taskSize)
+	public PlainNotificationThread(int taskSize)
 	{
 		super(taskSize);
 	}
@@ -63,6 +55,7 @@ class EncryptedNotificationThread extends NotificationQueue<Notification>
 					notification = super.dequeue();
 					switch (notification.getApplicationID())
 					{
+						/*
 						case CryAppID.SYMMETRIC_ENCRYPTED_NOTIFICATION:
 							log.info("SYMMETRIC_ENCRYPTED_NOTIFICATION received @" + Calendar.getInstance().getTime());
 							try
@@ -75,7 +68,6 @@ class EncryptedNotificationThread extends NotificationQueue<Notification>
 							}
 							break;
 
-							/*
 						case CryAppID.ASYMMETRIC_ENCRYPTED_NOTIFICATION:
 							log.info("ASYMMETRIC_ENCRYPTED_NOTIFICATION received @" + Calendar.getInstance().getTime());
 							try
@@ -103,7 +95,6 @@ class EncryptedNotificationThread extends NotificationQueue<Notification>
 								log.info("Exception: The machine is not owned by " + e.getSignature());
 							}
 							break;
-							*/
 							
 						case CryAppID.PRIVATE_NOTIFICATION:
 							log.info("PRIVATE_NOTIFICATION received @" + Calendar.getInstance().getTime());
@@ -128,6 +119,7 @@ class EncryptedNotificationThread extends NotificationQueue<Notification>
 								log.info("Exception: The machine is not owned by " + e.getOwner());
 							}
 							break;
+							*/
 							
 						case CryAppID.SAY_ASYMMETRIC_BYE_NOTIFICATION:
 							log.info("SAY_ASYMMETRIC_BYE_NOTIFICATION received @" + Calendar.getInstance().getTime());
@@ -154,7 +146,7 @@ class EncryptedNotificationThread extends NotificationQueue<Notification>
 					}
 					super.disposeMessage(notification);
 				}
-				catch (InterruptedException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | ShortBufferException | IllegalBlockSizeException | BadPaddingException | ClassNotFoundException | IOException | SignatureException | PublicKeyUnavailableException | SessionMismatchedException e)
+				catch (InterruptedException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | ShortBufferException | IllegalBlockSizeException | BadPaddingException | ClassNotFoundException | IOException | SessionMismatchedException e)
 				{
 					e.printStackTrace();
 				}

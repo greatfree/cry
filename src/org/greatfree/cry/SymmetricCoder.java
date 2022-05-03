@@ -131,7 +131,7 @@ public final class SymmetricCoder
 		return cipher.doFinal(input);
 	}
 
-	public static ServerMessage decryptServerMessage(byte[] encryptedData, SecretKey cipherKey, SecretKey ivKey, String cipherSpec) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException
+	public static ServerMessage decryptMessage(byte[] encryptedData, SecretKey cipherKey, SecretKey ivKey, String cipherSpec) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException
 	{
 		Cipher cipher = Cipher.getInstance(cipherSpec, new BouncyCastleProvider());
 		cipher.init(Cipher.DECRYPT_MODE, cipherKey, new IvParameterSpec(ivKey.getEncoded()));
@@ -172,6 +172,21 @@ public final class SymmetricCoder
 		int len = cipher.update(encryptedData, 0, encryptedData.length, finalOutput, 0);
 		len += cipher.doFinal(finalOutput, len);
 		return Tools.deserialize(finalOutput);
+	}
+
+	public static <T> T decryptObject(byte[] encryptedData, SecretKey cipherKey, SecretKey ivKey, String cipherSpec, Class<T> c) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException
+	{
+		Cipher cipher = Cipher.getInstance(cipherSpec, new BouncyCastleProvider());
+		cipher.init(Cipher.DECRYPT_MODE, cipherKey, new IvParameterSpec(ivKey.getEncoded()));
+		byte[] finalOutput = new byte[cipher.getOutputSize(encryptedData.length)];
+		int len = cipher.update(encryptedData, 0, encryptedData.length, finalOutput, 0);
+		len += cipher.doFinal(finalOutput, len);
+		Object obj = Tools.deserialize(finalOutput);
+		if (c.isInstance(obj))
+		{
+			return c.cast(obj);
+		}
+		return null;
 	}
 
 	public static ServerMessage decryptResponse(byte[] encryptedData, SecretKey cipherKey, SecretKey ivKey, String cipherSpec) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, IOException

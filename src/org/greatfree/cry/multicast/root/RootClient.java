@@ -16,7 +16,8 @@ import org.greatfree.concurrency.ThreadPool;
 import org.greatfree.cry.exceptions.CryptographyMismatchException;
 import org.greatfree.cry.exceptions.PublicKeyUnavailableException;
 import org.greatfree.cry.exceptions.SymmetricKeyUnavailableException;
-import org.greatfree.cry.server.Peer;
+import org.greatfree.cry.server.CryptoCSDispatcher;
+import org.greatfree.cry.server.CryPeer;
 import org.greatfree.exceptions.DistributedNodeFailedException;
 import org.greatfree.exceptions.RemoteReadException;
 import org.greatfree.message.multicast.MulticastNotification;
@@ -33,11 +34,11 @@ import org.greatfree.util.Tools;
  * 04/06/2022
  *
  */
-public final class RootClient
+public final class RootClient<Dispatcher extends CryptoCSDispatcher>
 {
-	private RootEventer eventer;
-	private RootReader reader;
-	private RootSyncMulticastor multicastor;
+	private RootEventer<Dispatcher> eventer;
+	private RootReader<Dispatcher> reader;
+	private RootSyncMulticastor<Dispatcher> multicastor;
 
 	/*
 	public RootClient(Peer eventer, int rootBranchCount, int treeBranchCount, long waitTime, ThreadPool pool, int cryptoOption)
@@ -48,16 +49,18 @@ public final class RootClient
 	}
 	*/
 	
-	public RootClient(RootClientBuilder builder)
+	public RootClient(RootClientBuilder<Dispatcher> builder)
 	{
-		this.multicastor = new RootSyncMulticastor(builder.getEventer(), builder.getRootBranchCount(), builder.getTreeBranchCount(), builder.getCryptoOption());
-		this.eventer = new RootEventer(this.multicastor, builder.getPool());
-		this.reader = new RootReader(this.multicastor, builder.getWaitTime(), builder.getPool());
+		this.multicastor = new RootSyncMulticastor<Dispatcher>(builder.getEventer(), builder.getRootBranchCount(), builder.getTreeBranchCount(), builder.getCryptoOption());
+		this.eventer = new RootEventer<Dispatcher>(this.multicastor, builder.getPool());
+		this.reader = new RootReader<Dispatcher>(this.multicastor, builder.getWaitTime(), builder.getPool());
 	}
 	
-	public static class RootClientBuilder implements Builder<RootClient>
+	public static class RootClientBuilder<Dispatcher extends CryptoCSDispatcher> implements Builder<RootClient<Dispatcher>>
 	{
-		private Peer eventer;
+//		private Peer eventer;
+//		private CryptoPeer<MulticastRootDispatcher> eventer;
+		private CryPeer<Dispatcher> eventer;
 		private int rootBranchCount;
 		private int treeBranchCount;
 		private long waitTime;
@@ -67,50 +70,65 @@ public final class RootClient
 		public RootClientBuilder()
 		{
 		}
-		
+
+		/*
 		public RootClientBuilder eventer(Peer eventer)
 		{
 			this.eventer = eventer;
 			return this;
 		}
+		*/
 		
-		public RootClientBuilder rootBranchCount(int rootBranchCount)
+		public RootClientBuilder<Dispatcher> eventer(CryPeer<Dispatcher> eventer)
+		{
+			this.eventer = eventer;
+			return this;
+		}
+		
+		public RootClientBuilder<Dispatcher> rootBranchCount(int rootBranchCount)
 		{
 			this.rootBranchCount = rootBranchCount;
 			return this;
 		}
 		
-		public RootClientBuilder treeBranchCount(int treeBranchCount)
+		public RootClientBuilder<Dispatcher> treeBranchCount(int treeBranchCount)
 		{
 			this.treeBranchCount = treeBranchCount;
 			return this;
 		}
 		
-		public RootClientBuilder waitTime(long waitTime)
+		public RootClientBuilder<Dispatcher> waitTime(long waitTime)
 		{
 			this.waitTime = waitTime;
 			return this;
 		}
 		
-		public RootClientBuilder pool(ThreadPool pool)
+		public RootClientBuilder<Dispatcher> pool(ThreadPool pool)
 		{
 			this.pool = pool;
 			return this;
 		}
 		
-		public RootClientBuilder cryptoOption(int cryptoOption)
+		public RootClientBuilder<Dispatcher> cryptoOption(int cryptoOption)
 		{
 			this.cryptoOption = cryptoOption;
 			return this;
 		}
 
 		@Override
-		public RootClient build() throws IOException
+		public RootClient<Dispatcher> build() throws IOException
 		{
-			return new RootClient(this);
+			return new RootClient<Dispatcher>(this);
 		}
-		
+
+		/*
 		public Peer getEventer()
+		{
+			return this.eventer;
+		}
+		*/
+		
+		public CryPeer<Dispatcher> getEventer()
 		{
 			return this.eventer;
 		}

@@ -7,7 +7,7 @@ package org.greatfree.cry.framework.multicast.client;
  * 04/11/2022
  *
  */
-final class MultiMenu
+public final class MultiMenu
 {
 	public final static String TAB = "	";
 	public final static String DELIMIT = "-----------------------------------------------";

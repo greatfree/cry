@@ -3,6 +3,7 @@ package org.greatfree.cry.multicast.root;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.greatfree.concurrency.Async;
+import org.greatfree.cry.server.CryptoCSDispatcher;
 
 /**
  * 
@@ -11,19 +12,19 @@ import org.greatfree.concurrency.Async;
  * 04/08/2022
  *
  */
-abstract class AsyncMulticastor<Message> extends Async<Message>
+abstract class AsyncMulticastor<Message, Dispatcher extends CryptoCSDispatcher> extends Async<Message>
 {
-	private RootSyncMulticastor multicastor;
+	private RootSyncMulticastor<Dispatcher> multicastor;
 	private AtomicInteger cryptoOption;
 
 //	public AsyncMulticastor(RootSyncMulticastor multicastor)
-	public AsyncMulticastor(RootSyncMulticastor multicastor, int cryptoOption)
+	public AsyncMulticastor(RootSyncMulticastor<Dispatcher> multicastor, int cryptoOption)
 	{
 		this.multicastor = multicastor;
 		this.cryptoOption = new AtomicInteger(cryptoOption);
 	}
 
-	public RootSyncMulticastor getMulticastor()
+	public RootSyncMulticastor<Dispatcher> getMulticastor()
 	{
 		return this.multicastor;
 	}

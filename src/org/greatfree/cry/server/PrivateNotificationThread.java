@@ -70,6 +70,7 @@ class PrivateNotificationThread extends NotificationQueue<PrivateNotification>
 					{
 						log.info("Exception: The machine is not owned by " + e.getOwner());
 					}
+					super.disposeMessage(notification);
 				}
 				catch (InterruptedException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
 						| InvalidAlgorithmParameterException | ShortBufferException | IllegalBlockSizeException
